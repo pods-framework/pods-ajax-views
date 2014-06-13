@@ -18,12 +18,24 @@ This plugin requires the [Pods Framework](http://wordpress.org/plugins/pods/) ve
 
 = Why AJAX Views? =
 
-If you are using pods_view to cache template output, you're already on the right track to improving performance of your site through it's powerful Partial Page Caching. However, what if you have a complicated view that may take a few seconds to generate? What if you have a few of those views on the same page?
+If you are using `pods_view` to cache template output, you're already on the right track to improving performance of your site through it's powerful Partial Page Caching. However, what if you have a complicated view that may take a few seconds to generate? What if you have a few of those views on the same page?
 
 On hosts like WPEngine, there's a strict 30 second limit and then a 502 server error is sent to the visitor. Waiting a long time for a page to load, or especially being sent a server error like that just isn't acceptable for visitors and they may choose to bail on your site.
 
-Pods AJAX Views takes those complicated views and lets you off-load them into a separate asynchronous AJAX call that allows the rest of the page to be built and sent to the browser. When the AJAX request runs, the view is cached like normal, so subsequent calls to the Pods AJAX View code will produce the exact same result as a default pods_view would.
+Pods AJAX Views takes those complicated views and lets you off-load them into a separate asynchronous AJAX call that allows the rest of the page to be built and sent to the browser. When the AJAX request runs, the view is cached like normal, so subsequent calls to the Pods AJAX View code will produce the exact same result as a default `pods_view` would.
 
+= Usage =
+
+Use the same way as `pods_view`, it accepts the same arguments, except one additional one for `$forced_regenerate` which can be set to true (default: false) that will force the view to be deleted from cache and reloaded.
+
+`pods_ajax_view( 'my-big-cached-template.php' );`
+
+Beware that AJAXed views are loaded from AJAX, not through the current page. They do not have access to the current WP_Query or Query variables, or the Post loop. If you want to pass anything into it, use the $data argument.
+
+For information about `pods_view`, see these resources:
+
+* [Partial Page Caching and Smart Template Parts with Pods](http://pods.io/tutorials/partial-page-caching-smart-template-parts-pods/)
+* [Code Reference: pods_view](http://pods.io/docs/code/pods-view/)
 
 == Installation ==
 

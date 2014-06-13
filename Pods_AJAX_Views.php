@@ -323,7 +323,7 @@ class Pods_AJAX_Views {
 	 * @param string $cache_key Cache key
 	 * @param string $cache_mode Cache mode
 	 *
-	 * @return array|bool Array of AJAX View data or false if not found
+	 * @return array Array of AJAX View data
 	 */
 	public static function get_ajax_view( $cache_key, $cache_mode ) {
 
@@ -389,7 +389,7 @@ class Pods_AJAX_Views {
 			global $wpdb;
 
 			// Set cache data
-			$data[ 'cache_key' ] = $cache_key;
+			$data[ 'cache_key' ]  = $cache_key;
 			$data[ 'cache_mode' ] = $cache_mode;
 
 			if ( isset( $data[ 'expires' ] ) ) {
@@ -543,8 +543,8 @@ class Pods_AJAX_Views {
 
 					$data[ 'tracking_data' ] = $ajax_view[ 'tracking_data' ];
 
-					$tracking_data[ 'total_time' ] += $total;
-					$tracking_data[ 'total_calls' ] += 1;
+					$tracking_data[ 'total_time' ]    += $total;
+					$tracking_data[ 'total_calls' ]   += 1;
 					$tracking_data[ 'last_generated' ] = current_time( 'mysql' );
 				}
 

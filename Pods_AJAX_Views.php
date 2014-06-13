@@ -74,7 +74,9 @@ class Pods_AJAX_Views {
 			global $wpdb;
 
 			// Table definitions
-			$tables = array( "
+			$tables = array();
+
+			$tables[] = "
 				CREATE TABLE `{$wpdb->prefix}podsviews` (
 					`cache_key` VARCHAR(255) NOT NULL,
 					`cache_mode` VARCHAR(14) NOT NULL,
@@ -85,7 +87,7 @@ class Pods_AJAX_Views {
 					PRIMARY KEY (`cache_key`),
 					UNIQUE INDEX `cache_key_mode` (`cache_key`, `cache_mode`)
 				)
-			" );
+			";
 
 			// Create / alter table handling
 			require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
@@ -340,11 +342,13 @@ class Pods_AJAX_Views {
 			 */
 			global $wpdb;
 
-			$ajax_view = $wpdb->get_row( $wpdb->prepare( "
+			$sql = "
 				SELECT *
 				FROM `{$wpdb->prefix}podsviews`
 				WHERE `cache_key` = %s AND `cache_mode` = %s
-			", $cache_key, $cache_mode ) );
+			";
+
+			$ajax_view = $wpdb->get_row( $wpdb->prepare( $sql, $cache_key, $cache_mode ) );
 
 			if ( ! empty( $ajax_view ) ) {
 				$ajax_view = array_map( 'maybe_unserialize', $ajax_view );

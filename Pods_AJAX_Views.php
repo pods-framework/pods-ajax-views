@@ -133,24 +133,19 @@ class Pods_AJAX_Views {
 				return $cache_mode;
 			}
 
-			// Default Pods 2.x class
-			$pods_view_class = 'PodsView';
-
 			// Pods 3.0 support
-			if ( version_compare( '3.0-a-1', PODS_VERSION ) ) {
-				$pods_view_class = 'Pods_View';
+			if ( version_compare( '3.0-a-1', PODS_VERSION, '<=' ) ) {
+				self::$cache_modes = Pods_View::$cache_modes;
 			}
-			// Include if it hasn't been called yet on the page
-			elseif ( !class_exists( 'PodsView' ) ) {
-				require_once( PODS_DIR . 'classes/PodsView.php' );
+			// Default Pods 2.x support
+			else {
+				// Include if it hasn't been called yet on the page
+				if ( !class_exists( 'PodsView' ) ) {
+					require_once( PODS_DIR . 'classes/PodsView.php' );
+				}
+
+				self::$cache_modes = PodsView::$cache_modes;
 			}
-
-			// Get vars from class dynamically (PHP 5.2 support)
-			$vars = get_class_vars( $pods_view_class );
-			// PHP 5.3 can do $pods_view_class::$cache_modes
-
-			// Set cache modes for future reference
-			self::$cache_modes = $vars[ '$cache_modes' ];
 		}
 
 		// If cache mode not supported, set default to 'cache'
@@ -179,20 +174,21 @@ class Pods_AJAX_Views {
 			return $expires;
 		}
 
-		// Default Pods 2.x class
-		$pods_view_class = 'PodsView';
-
 		// Pods 3.0 support
-		if ( version_compare( '3.0-a-1', PODS_VERSION ) ) {
-			$pods_view_class = 'Pods_View';
+		if ( version_compare( '3.0-a-1', PODS_VERSION, '<=' ) ) {
+			$expires = Pods_View::expires( $expires, $cache_mode );
 		}
-		// Include if it hasn't been called yet on the page
-		elseif ( !class_exists( 'PodsView' ) ) {
-    		require_once( PODS_DIR . 'classes/PodsView.php' );
+		// Default Pods 2.x support
+		else {
+			// Include if it hasn't been called yet on the page
+			if ( !class_exists( 'PodsView' ) ) {
+				require_once( PODS_DIR . 'classes/PodsView.php' );
+			}
+
+			$expires = PodsView::expires( $expires, $cache_mode );
 		}
 
-		// Call expires method on Pods View class
-		return call_user_func( array( $pods_view_class, 'expires' ), $expires, $cache_mode );
+		return $expires;
 
 	}
 

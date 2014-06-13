@@ -88,6 +88,7 @@ class Pods_AJAX_Views {
 			" );
 
 			// Create / alter table handling
+			require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
 			dbDelta( $tables );
 		}
 
@@ -149,7 +150,7 @@ class Pods_AJAX_Views {
 			// PHP 5.3 can do $pods_view_class::$cache_modes
 
 			// Set cache modes for future reference
-			self::$cache_modes = $vars[ 'cache_modes' ];
+			self::$cache_modes = $vars[ '$cache_modes' ];
 		}
 
 		// If cache mode not supported, set default to 'cache'
@@ -516,7 +517,7 @@ class Pods_AJAX_Views {
 			}
 
 			// Use/generate cache and output view
-			pods_view( $ajax_view[ 'view' ], $ajax_view[ 'data' ], $ajax_view[ 'expires' ], $cache_mode );
+			pods_view( $ajax_view[ 'view' ], $ajax_view[ 'view_data' ], $ajax_view[ 'expires' ], $cache_mode );
 
 			// Track total time to run
 			$total = time() - $start;
@@ -731,8 +732,8 @@ class Pods_AJAX_Views {
 			$spinner = apply_filters( 'pods_ajax_view_loader', includes_url( 'images/wpspin.gif' ), $view, $data, $expires, $cache_mode );
 
 			// Output div with loading image
-			$output .= '<div class="pods-ajax-view-loader ' . sanitize_html_class( $nonce ) . '">'
-				. '<img src="' . esc_url( $spinner ) . '" />'
+			$output .= '<div class="pods-ajax-view-loader ' . sanitize_html_class( 'pods-ajax-view-loader-' . $nonce ) . '">'
+				. '<img src="' . esc_url( $spinner ) . '" style="max-width:100%;max-height:100%;" />'
 				. '</div>';
 		}
 

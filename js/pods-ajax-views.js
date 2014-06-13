@@ -1,16 +1,3 @@
-jQuery( function() {
-
-	// Check if defined and has values
-	if ( 'undefined' != typeof pods_ajax_views && {} != pods_ajax_views ) {
-		// Send to queue
-		Pods_AJAX_View_Processor.queue = Pods_AJAX_View_Processor.queue.concat( pods_ajax_views );
-
-		// Start processing
-		Pods_AJAX_View_Processor.process_next();
-	}
-
-} );
-
 /**
  * Pods AJAX Views processor
  *
@@ -29,17 +16,17 @@ var Pods_AJAX_View_Processor = {
 	process_next : function() {
 
 		// Check if there are views in the queue
-		if ( queue.length ) {
+		if ( Pods_AJAX_View_Processor.queue.length ) {
 			// Get the next view in line
-			view = queue.shift();
+			view = Pods_AJAX_View_Processor.queue.shift();
 
 			// Check for valid view data, then load the view
 			if ( 'undefined' != typeof view.cache_key && 'undefined' != typeof view.cache_mode && 'undefined' != typeof view.nonce ) {
-				this.load_view( view.cache_key, view.cache_mode, view.nonce );
+				Pods_AJAX_View_Processor.load_view( view.cache_key, view.cache_mode, view.nonce );
 			}
 			// If invalid, process next view from the queue
 			else {
-				this.process_next();
+				Pods_AJAX_View_Processor.process_next();
 			}
 		}
 
@@ -55,7 +42,7 @@ var Pods_AJAX_View_Processor = {
 	load_view : function( cache_key, cache_mode, nonce ) {
 
 		// Get view container(s)
-		var $view_container = jQuery( 'div.' + nonce );
+		var $view_container = jQuery( 'div.pods-ajax-view-loader-' + nonce );
 
 		// If view container found (and not already processed by another view in the queue)
 		if ( $view_container.length ) {
@@ -98,3 +85,16 @@ var Pods_AJAX_View_Processor = {
 	}
 
 };
+
+jQuery( function() {
+
+	// Check if defined and has values
+	if ( 'undefined' != typeof pods_ajax_views && {} != pods_ajax_views ) {
+		// Send to queue
+		Pods_AJAX_View_Processor.queue = Pods_AJAX_View_Processor.queue.concat( pods_ajax_views );
+
+		// Start processing
+		Pods_AJAX_View_Processor.process_next();
+	}
+
+} );

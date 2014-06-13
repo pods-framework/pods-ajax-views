@@ -50,7 +50,7 @@ OR you can just install it with WordPress by going to Plugins >> Add New >> and 
 
 Check out our GitHub for a list of contributors, or search our GitHub issues to see everyone involved in adding features, fixing bugs, or reporting issues/testing.
 
-[github.com/pods-framework/pods-alternative-cache/graphs/contributors](https://github.com/pods-framework/pods-alternative-cache/graphs/contributors)
+[github.com/pods-framework/pods-ajax-views/graphs/contributors](https://github.com/pods-framework/pods-ajax-views/graphs/contributors)
 
 
 == Changelog ==

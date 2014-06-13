@@ -26,7 +26,7 @@ Pods AJAX Views takes those complicated views and lets you off-load them into a 
 
 = Usage =
 
-Use the same way as `pods_view`, it accepts the same arguments, except one additional one for `$forced_regenerate` which can be set to true (default: false) that will force the view to be deleted from cache and reloaded.
+Use the same way as `pods_view`, it accepts the same arguments, except one additional argument `$forced_regenerate` at the end which can be set to true (default: false) that will force the view to be deleted from cache and reloaded.
 
 `pods_ajax_view( 'my-big-cached-template.php' );`
 

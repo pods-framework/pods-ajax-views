@@ -636,6 +636,11 @@ class Pods_AJAX_Views {
 	 */
 	public static function ajax_view( $view, $data = null, $expires = false, $cache_mode = 'cache', $forced_generate = false ) {
 
+		// Allow for forced regeneration from URL
+		if (  ! $forced_generate && function_exists( 'pods_is_admin' ) && pods_is_admin( 'pods' ) && 1 == pods_v( 'pods_ajax_view_refresh' ) ) {
+			$forced_generate = true;
+		}
+
 		// Get cache key for request
 		$cache_key = self::get_cache_key_from_view( $view, $data, $expires, $cache_mode );
 

@@ -394,7 +394,7 @@ class Pods_AJAX_Views {
 
 			if ( isset( $data[ 'expires' ] ) ) {
 				if ( false === $data[ 'expires' ] ) {
-					 $data[ 'expires' ] = -1;
+					$data[ 'expires' ] = -1;
 				}
 
 				$data[ 'expires' ] = (int) $data[ 'expires' ];
@@ -461,7 +461,7 @@ class Pods_AJAX_Views {
 	/**
 	 * Reset AJAX View tracking
 	 *
-	 * @return array Affected rows for each reset done
+	 * @return array<int> Affected rows for each reset done
 	 */
 	public static function reset_ajax_views() {
 
@@ -512,6 +512,12 @@ class Pods_AJAX_Views {
 			// If -1, translate back to false
 			if ( -1 == $ajax_view[ 'expires' ] ) {
 				$ajax_view[ 'expires' ] = false;
+			}
+
+			// Force regeneration
+			if ( $forced_generate ) {
+				// Delete cached view
+				self::delete_cached_view( $cache_key, $cache_mode );
 			}
 
 			// Use/generate cache and output view
@@ -636,12 +642,16 @@ class Pods_AJAX_Views {
 		// Get cached view
 		$output = self::get_cached_view( $cache_key, $cache_mode );
 
+		// Force regeneration
+		if ( $forced_generate ) {
+			// Delete cached view
+			self::delete_cached_view( $cache_key, $cache_mode );
+
+			$output = false;
+		}
+
 		// If not cached, add to the queue and include it via AJAX
-		if ( false === $output || $forced_generate ) {
-			if ( $forced_generate ) {
-				// Delete cached view
-				self::delete_cached_view( $cache_key, $cache_mode );
-			}
+		if ( false === $output ) {
 
 			// Advanced $expires handling
 			$expires = self::handle_expires( $expires, $cache_mode );

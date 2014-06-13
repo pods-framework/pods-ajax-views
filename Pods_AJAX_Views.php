@@ -212,20 +212,7 @@ class Pods_AJAX_Views {
 			return false;
 		}
 
-		// Default Pods 2.x class
-		$pods_view_class = 'PodsView';
-
-		// Pods 3.0 support
-		if ( version_compare( '3.0-a-1', PODS_VERSION ) ) {
-			$pods_view_class = 'Pods_View';
-		}
-		// Include if it hasn't been called yet on the page
-		elseif ( !class_exists( 'PodsView' ) ) {
-    		require_once( PODS_DIR . 'classes/PodsView.php' );
-		}
-
-		// Call expires method on Pods View class
-		return call_user_func( array( $pods_view_class, 'get' ), $cache_key, $cache_mode, 'pods_view' );
+		return pods_view_get( $cache_key, $cache_mode, 'pods_view' );
 
 	}
 
@@ -246,20 +233,7 @@ class Pods_AJAX_Views {
 			return false;
 		}
 
-		// Default Pods 2.x class
-		$pods_view_class = 'PodsView';
-
-		// Pods 3.0 support
-		if ( version_compare( '3.0-a-1', PODS_VERSION ) ) {
-			$pods_view_class = 'Pods_View';
-		}
-		// Include if it hasn't been called yet on the page
-		elseif ( !class_exists( 'PodsView' ) ) {
-    		require_once( PODS_DIR . 'classes/PodsView.php' );
-		}
-
-		// Call expires method on Pods View class
-		return call_user_func( array( $pods_view_class, 'clear' ), $cache_key, $cache_mode, 'pods_view' );
+		return pods_view_clear( $cache_key, $cache_mode, 'pods_view' );
 
 	}
 

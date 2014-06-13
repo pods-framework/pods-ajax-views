@@ -64,7 +64,7 @@ class Pods_AJAX_Views {
 	/**
 	 * Activate plugin routine
 	 */
-	public static function activate( $network_wide = false ) {
+	public static function activate() {
 
 		// Create table for stats tracking and other advanced features
 		if ( defined( 'PODS_AJAX_VIEWS_STATS' ) && PODS_AJAX_VIEWS_STATS ) {
@@ -100,7 +100,7 @@ class Pods_AJAX_Views {
 	/**
 	 * Deactivate plugin routine
 	 */
-	public static function deactivate( $network_wide = false ) {
+	public static function deactivate() {
 
 		/**
 		 * @var $wpdb wpdb

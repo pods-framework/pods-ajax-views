@@ -196,14 +196,14 @@ class Pods_AJAX_Views {
 	}
 
 	/**
-	 * Advanced expires handling for Pods Views
+	 * Get cached view from Pods Views
 	 *
-	 * @uses PodsView::expires
+	 * @uses PodsView::get
 	 *
-	 * @param array|bool|int $expires
+	 * @param string $cache_key Cache key
 	 * @param string $cache_mode Cache mode
 	 *
-	 * @return mixed
+	 * @return bool|mixed
 	 */
 	private static function get_cached_view( $cache_key, $cache_mode ) {
 
@@ -226,6 +226,40 @@ class Pods_AJAX_Views {
 
 		// Call expires method on Pods View class
 		return call_user_func( array( $pods_view_class, 'get' ), $cache_key, $cache_mode, 'pods_view' );
+
+	}
+
+	/**
+	 * Delete cached view from Pods Views
+	 *
+	 * @uses PodsView::clear
+	 *
+	 * @param string $cache_key Cache key
+	 * @param string $cache_mode Cache mode
+	 *
+	 * @return bool|mixed
+	 */
+	private static function delete_cached_view( $cache_key, $cache_mode ) {
+
+		// Check compatibility
+		if ( !self::check_compatibility() ) {
+			return false;
+		}
+
+		// Default Pods 2.x class
+		$pods_view_class = 'PodsView';
+
+		// Pods 3.0 support
+		if ( version_compare( '3.0-a-1', PODS_VERSION ) ) {
+			$pods_view_class = 'Pods_View';
+		}
+		// Include if it hasn't been called yet on the page
+		elseif ( !class_exists( 'PodsView' ) ) {
+    		require_once( PODS_DIR . 'classes/PodsView.php' );
+		}
+
+		// Call expires method on Pods View class
+		return call_user_func( array( $pods_view_class, 'clear' ), $cache_key, $cache_mode, 'pods_view' );
 
 	}
 
@@ -617,10 +651,11 @@ class Pods_AJAX_Views {
 	 * @param array|null $data (optional) Data to pass on to the template
 	 * @param bool|int|array $expires (optional) Time in seconds for the cache to expire, if 0 no expires.
 	 * @param string $cache_mode (optional) Decides the caching method to use for the view.
+	 * @param bool $forced_generate Force generation, even already cached
 	 *
 	 * @return string
 	 */
-	public static function ajax_view( $view, $data = null, $expires = false, $cache_mode = 'cache' ) {
+	public static function ajax_view( $view, $data = null, $expires = false, $cache_mode = 'cache', $forced_generate = false ) {
 
 		// Get cache key for request
 		$cache_key = self::get_cache_key_from_view( $view, $data, $expires, $cache_mode );
@@ -629,7 +664,12 @@ class Pods_AJAX_Views {
 		$output = self::get_cached_view( $cache_key, $cache_mode );
 
 		// If not cached, add to the queue and include it via AJAX
-		if ( false === $output ) {
+		if ( false === $output || $forced_generate ) {
+			if ( $forced_generate ) {
+				// Delete cached view
+				self::delete_cached_view( $cache_key, $cache_mode );
+			}
+
 			// Advanced $expires handling
 			$expires = self::handle_expires( $expires, $cache_mode );
 

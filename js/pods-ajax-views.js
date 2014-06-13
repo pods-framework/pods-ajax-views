@@ -61,6 +61,10 @@ var Pods_AJAX_View_Processor = {
 					// Replace temporary container with the real content
 					$view_container.replaceWith( content );
 
+					// Trigger events for advanced functionality
+					jQuery( document ).trigger( 'pods-ajax-view-loaded', [ cache_key, cache_mode, content ] );
+					jQuery( document ).trigger( 'pods-ajax-view-loaded-' + cache_key + '-' + cache_mode, [ cache_key, cache_mode, content ] );
+
 					// Process next view from the queue
 					Pods_AJAX_View_Processor.process_next();
 

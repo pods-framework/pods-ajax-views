@@ -35,7 +35,7 @@ function pods_ajax_view( $view, $data = null, $expires = false, $cache_mode = 'c
 	$view = Pods_AJAX_Views::ajax_view( $view, $data, $expires, $cache_mode, $forced_generate );
 
 	// echo if not set to return
-	if ( !$return ) {
+	if ( ! $return ) {
 		// Output view
 		echo $view;
 

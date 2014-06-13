@@ -20,7 +20,7 @@ class Pods_AJAX_Views {
 	public static function init() {
 
 		// Default stats tracking and advanced functionality is off
-		if ( !defined( 'PODS_AJAX_VIEWS_STATS' ) ) {
+		if ( ! defined( 'PODS_AJAX_VIEWS_STATS' ) ) {
 			define( 'PODS_AJAX_VIEWS_STATS', false );
 		}
 
@@ -38,7 +38,7 @@ class Pods_AJAX_Views {
 	 *
 	 * @return bool
 	 */
-	private static function check_compatibility() {
+	private static function is_compatible() {
 
 		// See if compatible has been checked yet, if not, check it and set it
 		if ( null === self::$compatible ) {
@@ -129,7 +129,7 @@ class Pods_AJAX_Views {
 		// Check if cache modes has been set yet
 		if ( empty( self::$cache_modes ) ) {
 			// Check compatibility
-			if ( !self::check_compatibility() ) {
+			if ( ! self::is_compatible() ) {
 				return $cache_mode;
 			}
 
@@ -140,7 +140,7 @@ class Pods_AJAX_Views {
 			// Default Pods 2.x support
 			else {
 				// Include if it hasn't been called yet on the page
-				if ( !class_exists( 'PodsView' ) ) {
+				if ( ! class_exists( 'PodsView' ) ) {
 					require_once( PODS_DIR . 'classes/PodsView.php' );
 				}
 
@@ -149,7 +149,7 @@ class Pods_AJAX_Views {
 		}
 
 		// If cache mode not supported, set default to 'cache'
-		if ( !in_array( $cache_mode, self::$cache_modes ) ) {
+		if ( ! in_array( $cache_mode, self::$cache_modes ) ) {
 			$cache_mode = 'cache';
 		}
 
@@ -165,12 +165,12 @@ class Pods_AJAX_Views {
 	 * @param array|bool|int $expires
 	 * @param string $cache_mode Cache mode
 	 *
-	 * @return mixed
+	 * @return int|bool
 	 */
 	private static function handle_expires( $expires, $cache_mode ) {
 
 		// Check compatibility
-		if ( !self::check_compatibility() ) {
+		if ( ! self::is_compatible() ) {
 			return $expires;
 		}
 
@@ -181,7 +181,7 @@ class Pods_AJAX_Views {
 		// Default Pods 2.x support
 		else {
 			// Include if it hasn't been called yet on the page
-			if ( !class_exists( 'PodsView' ) ) {
+			if ( ! class_exists( 'PodsView' ) ) {
 				require_once( PODS_DIR . 'classes/PodsView.php' );
 			}
 
@@ -200,12 +200,12 @@ class Pods_AJAX_Views {
 	 * @param string $cache_key Cache key
 	 * @param string $cache_mode Cache mode
 	 *
-	 * @return bool|mixed
+	 * @return bool|string
 	 */
 	private static function get_cached_view( $cache_key, $cache_mode ) {
 
 		// Check compatibility
-		if ( !self::check_compatibility() ) {
+		if ( ! self::is_compatible() ) {
 			return false;
 		}
 
@@ -221,12 +221,12 @@ class Pods_AJAX_Views {
 	 * @param string $cache_key Cache key
 	 * @param string $cache_mode Cache mode
 	 *
-	 * @return bool|mixed
+	 * @return bool
 	 */
 	private static function delete_cached_view( $cache_key, $cache_mode ) {
 
 		// Check compatibility
-		if ( !self::check_compatibility() ) {
+		if ( ! self::is_compatible() ) {
 			return false;
 		}
 
@@ -249,7 +249,7 @@ class Pods_AJAX_Views {
 	private static function get_cache_key_from_view( $view, $data = null, $expires = false, $cache_mode = 'cache' ) {
 
 		// Check compatibility
-		if ( !self::check_compatibility() ) {
+		if ( ! self::is_compatible() ) {
 			return $view;
 		}
 
@@ -263,7 +263,7 @@ class Pods_AJAX_Views {
 		$view_id = '';
 
 		// If $view is not an array, look for unique identifiers for segmented caching
-		if ( !is_array( $view ) ) {
+		if ( ! is_array( $view ) ) {
 			// Get query value for segmenting
 			$view_q = explode( '?', $view );
 
@@ -346,7 +346,7 @@ class Pods_AJAX_Views {
 				WHERE `cache_key` = %s AND `cache_mode` = %s
 			", $cache_key, $cache_mode ) );
 
-			if ( !empty( $ajax_view ) ) {
+			if ( ! empty( $ajax_view ) ) {
 				$ajax_view = array_map( 'maybe_unserialize', $ajax_view );
 			}
 			else {
@@ -355,7 +355,7 @@ class Pods_AJAX_Views {
 		}
 
 		// Combine stats data (if found) with transient data
-		if ( !empty( $ajax_view_transient ) ) {
+		if ( ! empty( $ajax_view_transient ) ) {
 			$ajax_view = array_merge( $ajax_view_transient, $ajax_view );
 		}
 
@@ -420,7 +420,7 @@ class Pods_AJAX_Views {
 	 * @param string $cache_key Cache key
 	 * @param string $cache_mode Cache mode
 	 *
-	 * @return mixed|null
+	 * @return bool
 	 */
 	public static function delete_ajax_view( $cache_key, $cache_mode ) {
 
@@ -492,15 +492,13 @@ class Pods_AJAX_Views {
 	 * @param string $cache_key Cache key
 	 * @param string $cache_mode Cache mode
 	 * @param bool $forced_generate Force generation, even already cached
-	 *
-	 * @return mixed|null
 	 */
 	public static function generate_view( $cache_key, $cache_mode, $forced_generate = false ) {
 
 		// Get AJAX View
 		$ajax_view = self::get_ajax_view( $cache_key, $cache_mode );
 
-		if ( !empty( $ajax_view ) ) {
+		if ( ! empty( $ajax_view ) ) {
 			// Start timer
 			$start = time();
 
@@ -519,7 +517,7 @@ class Pods_AJAX_Views {
 			$total = time() - $start;
 
 			// Stats tracking of views
-			if ( defined( 'PODS_AJAX_VIEWS_STATS' ) && PODS_AJAX_VIEWS_STATS && !empty( $ajax_view[ 'path' ] ) ) {
+			if ( defined( 'PODS_AJAX_VIEWS_STATS' ) && PODS_AJAX_VIEWS_STATS && ! empty( $ajax_view[ 'path' ] ) ) {
 				$data = array();
 
 				// Default tracking data
@@ -530,7 +528,7 @@ class Pods_AJAX_Views {
 				);
 
 				// Merge tracking data if path called from before
-				if ( !empty( $ajax_view[ 'tracking_data' ] ) && !empty( $ajax_view[ 'tracking_data' ][ $ajax_view[ 'path' ] ] ) ) {
+				if ( ! empty( $ajax_view[ 'tracking_data' ] ) && ! empty( $ajax_view[ 'tracking_data' ][ $ajax_view[ 'path' ] ] ) ) {
 					$tracking_data = $ajax_view[ 'tracking_data' ][ $ajax_view[ 'path' ] ];
 
 					$data[ 'tracking_data' ] = $ajax_view[ 'tracking_data' ];
@@ -556,7 +554,7 @@ class Pods_AJAX_Views {
 	public static function admin_ajax_view() {
 
 		// Check if request is there
-		if ( !empty( $_REQUEST[ 'pods_ajax_view_key' ] ) && !empty( $_REQUEST[ 'pods_ajax_view_mode' ] ) && !empty( $_REQUEST[ 'pods_ajax_view_nonce' ] ) ) {
+		if ( ! empty( $_REQUEST[ 'pods_ajax_view_key' ] ) && ! empty( $_REQUEST[ 'pods_ajax_view_mode' ] ) && ! empty( $_REQUEST[ 'pods_ajax_view_nonce' ] ) ) {
 			// Build nonce action from request
 			$nonce_action = 'pods-ajax-view-' . md5( $_REQUEST[ 'pods_ajax_view_key' ] . '/' . $_REQUEST[ 'pods_ajax_view_mode' ] );
 
@@ -578,7 +576,7 @@ class Pods_AJAX_Views {
 	public static function admin_ajax_regenerate() {
 
 		// Check if request is there
-		if ( !empty( $_REQUEST[ 'pods_ajax_view_key' ] ) && !empty( $_REQUEST[ 'pods_ajax_view_mode' ] ) && !empty( $_REQUEST[ 'pods_ajax_view_nonce' ] ) ) {
+		if ( ! empty( $_REQUEST[ 'pods_ajax_view_key' ] ) && ! empty( $_REQUEST[ 'pods_ajax_view_mode' ] ) && ! empty( $_REQUEST[ 'pods_ajax_view_nonce' ] ) ) {
 			// Build nonce action from request
 			$nonce_action = 'pods-ajax-view-' . md5( $_REQUEST[ 'pods_ajax_view_key' ] . '/' . $_REQUEST[ 'pods_ajax_view_mode' ] ) . '/regenerate';
 

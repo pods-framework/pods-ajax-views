@@ -655,9 +655,12 @@ class Pods_AJAX_Views {
 			$output = false;
 		}
 
+		// Check origins and avoid JS cross-domain issues with AJAX, do normal pods_view in that case
+		if ( !is_allowed_http_origin() ) {
+			$ouput = pods_view( $view, $data, $expires, $cache_mode, true );
+		}
 		// If not cached, add to the queue and include it via AJAX
-		if ( false === $output ) {
-
+		elseif ( false === $output ) {
 			// Advanced $expires handling
 			$expires = self::handle_expires( $expires, $cache_mode );
 

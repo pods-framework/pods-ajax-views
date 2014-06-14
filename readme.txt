@@ -14,7 +14,7 @@ Utilize AJAX cache generation and loading for Pods Views. If a view takes too lo
 
 Pods AJAX Views offers an easy way to generate cached views from AJAX when they haven't been cached yet. It will serve straight from cache and output on the page if the view has already been generated.
 
-This plugin requires the [Pods Framework](http://wordpress.org/plugins/pods/) version 2.4 or later to run.
+This plugin requires the [Pods Framework](http://wordpress.org/plugins/pods/) version 2.4.1 or later to run.
 
 = Why AJAX Views? =
 

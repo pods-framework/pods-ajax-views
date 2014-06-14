@@ -46,7 +46,7 @@ class Pods_AJAX_Views_Admin {
 			'orderby' => 't.avg_time DESC',
 			'fields' => array(
 				'manage' => array(
-					'view' =>  array(
+					'view' => array(
 						'name' => 'view',
 						'label' => 'View',
 						'type' => 'text'
@@ -88,7 +88,7 @@ class Pods_AJAX_Views_Admin {
 					)
 				),
 				'search' => array(
-					'view' =>  array(
+					'view' => array(
 						'name' => 'view',
 						'label' => 'View',
 						'type' => 'text'

@@ -557,7 +557,7 @@ class Pods_AJAX_Views_Frontend {
 	public static function ajax_view( $view, $data = null, $expires = false, $cache_mode = 'cache', $forced_generate = false ) {
 
 		// Allow for forced regeneration from URL
-		if (  ! $forced_generate && function_exists( 'pods_is_admin' ) && pods_is_admin( 'pods' ) && 1 == pods_v( 'pods_ajax_view_refresh' ) ) {
+		if ( ! $forced_generate && function_exists( 'pods_is_admin' ) && pods_is_admin( 'pods' ) && 1 == pods_v( 'pods_ajax_view_refresh' ) ) {
 			$forced_generate = true;
 		}
 
@@ -576,7 +576,7 @@ class Pods_AJAX_Views_Frontend {
 		}
 
 		// Check origins and avoid JS cross-domain issues with AJAX, do normal pods_view in that case
-		if ( '' !== get_http_origin() && !is_allowed_http_origin() ) {
+		if ( '' !== get_http_origin() && ! is_allowed_http_origin() ) {
 			$output = pods_view( $view, $data, $expires, $cache_mode, true );
 		}
 		// If not cached, add to the queue and include it via AJAX

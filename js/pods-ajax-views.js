@@ -58,8 +58,14 @@ var Pods_AJAX_View_Processor = {
 				},
 				success : function ( content ) {
 
+					// Handle
+					if ( pods_ajax_views_config.is_admin ) {
+
+					}
 					// Replace temporary container with the real content
-					$view_container.replaceWith( content );
+					else {
+						$view_container.replaceWith( content );
+					}
 
 					// Trigger events for advanced functionality
 					jQuery( document ).trigger( 'pods-ajax-view-loaded', [ cache_key, cache_mode, content ] );

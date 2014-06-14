@@ -3,15 +3,15 @@
 Plugin Name: Pods AJAX Views
 Plugin URI: http://pods.io/2014/04/16/introducing-pods-alternative-cache/
 Description: An easy way to generate cached views from AJAX when they haven't been cached yet
-Version: 0.1
+Version: 0.1.10
 Author: The Pods Framework Team
 Author URI: http://pods.io/
 */
 
 // Pods AJAX Views version
-define( 'PODS_AJAX_VIEWS_VERSION', '0.1.1' );
+define( 'PODS_AJAX_VIEWS_VERSION', '0.1.10' );
 
-// Include Pods_AJAX_Views plugin class
+// Include class
 include_once 'Pods_AJAX_Views.php';
 
 /**
@@ -31,8 +31,10 @@ include_once 'Pods_AJAX_Views.php';
  */
 function pods_ajax_view( $view, $data = null, $expires = false, $cache_mode = 'cache', $return = false, $forced_generate = false ) {
 
+	include_once 'Pods_AJAX_Views_Frontend.php';
+
 	// Setup AJAX View
-	$view = Pods_AJAX_Views::ajax_view( $view, $data, $expires, $cache_mode, $forced_generate );
+	$view = Pods_AJAX_Views_Frontend::ajax_view( $view, $data, $expires, $cache_mode, $forced_generate );
 
 	// echo if not set to return
 	if ( ! $return ) {

@@ -520,6 +520,7 @@ class Pods_AJAX_Views_Frontend {
 	 *
 	 * @see PodsView::view
 	 *
+	 * @param null $_null Parameter is returned as is or you can override it to bypass default PodsView::view()
 	 * @param string $view Path of the view file
 	 * @param array|null $data (optional) Data to pass on to the template
 	 * @param bool|int|array $expires (optional) Time in seconds for the cache to expire, if 0 no expires.

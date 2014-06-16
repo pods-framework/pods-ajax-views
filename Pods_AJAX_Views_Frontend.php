@@ -14,8 +14,8 @@ class Pods_AJAX_Views_Frontend {
 	 */
 	public static function init() {
 
-		// Register assets
-		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'register_assets' ) );
+		// Override default functionality of pods_view to use pods_ajax_view
+		add_action( 'pods_view_alt_view', array( 'Pods_AJAX_Views_Frontend', 'pods_view_alt' ) );
 
 	}
 
@@ -333,6 +333,9 @@ class Pods_AJAX_Views_Frontend {
 		// Restrict cache mode
 		$cache_mode = self::restrict_cache_mode( $cache_mode );
 
+		// Delete cached view
+		self::delete_cached_view( $cache_key, $cache_mode );
+
 		// Delete from stats
 		if ( defined( 'PODS_AJAX_VIEWS_STATS' ) && PODS_AJAX_VIEWS_STATS ) {
 			/**
@@ -398,8 +401,9 @@ class Pods_AJAX_Views_Frontend {
 	 * @param string $cache_key Cache key
 	 * @param string $cache_mode Cache mode
 	 * @param bool $forced_generate Force generation, even already cached
+	 * @param bool $manual_action Whether the request was manual (via admin regenerate action)
 	 */
-	public static function generate_view( $cache_key, $cache_mode, $forced_generate = false ) {
+	public static function generate_view( $cache_key, $cache_mode, $forced_generate = false, $manual_action = false ) {
 
 		// Get AJAX View
 		$ajax_view = self::get_ajax_view( $cache_key, $cache_mode );
@@ -455,6 +459,10 @@ class Pods_AJAX_Views_Frontend {
 					unset( $data[ '_data' ] );
 				}
 
+				if ( $manual_action ) {
+					$ajax_view[ '_data' ][ 'path' ] = 'Manual Regeneration';
+				}
+
 				if ( ! empty( $ajax_view[ '_data' ] ) && ! empty( $ajax_view[ '_data' ][ 'path' ] ) ) {
 					// Default tracking data
 					$tracking_data = array(
@@ -465,7 +473,7 @@ class Pods_AJAX_Views_Frontend {
 						'locations' => array()
 					);
 
-					if ( ! empty( $ajax_view[ '_data' ][ 'uri' ] ) ) {
+					if ( ! empty( $ajax_view[ '_data' ][ 'uri' ] ) && ! $manual_action ) {
 						$tracking_data[ 'locations' ][] = $ajax_view[ '_data' ][ 'uri' ];
 					}
 
@@ -493,25 +501,6 @@ class Pods_AJAX_Views_Frontend {
 				self::save_ajax_view( $cache_key, $cache_mode, $data );
 			}
 		}
-
-	}
-
-	/**
-	 * Register assets for Pods AJAX Views
-	 */
-	public function register_assets() {
-
-		// Register JS script for Pods AJAX View processing
-		wp_register_script( 'pods-ajax-views', plugins_url( 'js/pods-ajax-views.js', __FILE__ ), array( 'jquery' ), PODS_AJAX_VIEWS_VERSION, true );
-
-		// Setup config values for reference
-		$config = array(
-			'ajax_url' => admin_url( 'admin-ajax.php' ),
-			'version' => PODS_AJAX_VIEWS_VERSION
-		);
-
-		// Setup variable for output when JS enqueued
-		wp_localize_script( 'pods-ajax-views', 'pods_ajax_views_config', $config );
 
 	}
 
@@ -558,7 +547,7 @@ class Pods_AJAX_Views_Frontend {
 	public static function ajax_view( $view, $data = null, $expires = false, $cache_mode = 'cache', $forced_generate = false ) {
 
 		// Allow for forced regeneration from URL
-		if ( ! $forced_generate && function_exists( 'pods_is_admin' ) && pods_is_admin( 'pods' ) && 1 == pods_v( 'pods_ajax_view_refresh' ) ) {
+		if (  ! $forced_generate && function_exists( 'pods_is_admin' ) && pods_is_admin( 'pods' ) && 1 == pods_v( 'pods_ajax_view_refresh' ) ) {
 			$forced_generate = true;
 		}
 
@@ -577,7 +566,7 @@ class Pods_AJAX_Views_Frontend {
 		}
 
 		// Check origins and avoid JS cross-domain issues with AJAX, do normal pods_view in that case
-		if ( '' !== get_http_origin() && ! is_allowed_http_origin() ) {
+		if ( '' !== get_http_origin() && !is_allowed_http_origin() ) {
 			$output = pods_view( $view, $data, $expires, $cache_mode, true );
 		}
 		// If not cached, add to the queue and include it via AJAX
@@ -589,6 +578,10 @@ class Pods_AJAX_Views_Frontend {
 			if ( false === $expires ) {
 				$expires = '-1';
 			}
+
+			// Setup path / uri information
+			$path = '';
+			$uri  = '';
 
 			// Get backtrace to build path information
 			$debug_backtrace = debug_backtrace();
@@ -608,9 +601,6 @@ class Pods_AJAX_Views_Frontend {
 
 			// Get function info from backtrace
 			$debug_backtrace = $debug_backtrace[ $depth ];
-
-			// Setup path information
-			$path = '';
 
 			// Add file location to path
 			if ( isset( $debug_backtrace[ 'file' ] ) ) {

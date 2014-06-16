@@ -11,9 +11,49 @@ var Pods_AJAX_View_Processor = {
 	queue : [],
 
 	/**
+	 * Store total number of original queue
+	 */
+	total : 0,
+
+	/**
+	 * Store progress indicator objects
+	 */
+	progress_indicator : {
+		status : null,
+		progress : null,
+		progress_label : null
+	},
+
+	/**
 	 * Process the next view from the queue
 	 */
 	process_next : function() {
+
+		if ( pods_ajax_views_config.is_admin && null === Pods_AJAX_View_Processor.progress_indicator.progress ) {
+			Pods_AJAX_View_Processor.progress_indicator.status = jQuery( '#pods-ajax-views-progress-status' );
+			Pods_AJAX_View_Processor.progress_indicator.progress = jQuery( '#pods-ajax-views-progress-indicator' );
+			Pods_AJAX_View_Processor.progress_indicator.progress_label = jQuery( '#pods-ajax-views-progress-label'  );
+
+			Pods_AJAX_View_Processor.progress_indicator.progress.show();
+
+			Pods_AJAX_View_Processor.progress_indicator.progress.progressbar( {
+				value : 0,
+				max : 200,
+				change : function() {
+
+					var value = Pods_AJAX_View_Processor.progress_indicator.progress.progressbar( 'value' );
+
+					// Value / 2 because max is 200 and we want 0-100% format
+					Pods_AJAX_View_Processor.progress_indicator.progress_label.text( ( value / 2 ) + '%' );
+
+				},
+				complete : function() {
+
+					Pods_AJAX_View_Processor.progress_indicator.progress_label.text( '100%' );
+
+				}
+			} );
+		}
 
 		// Check if there are views in the queue
 		if ( Pods_AJAX_View_Processor.queue.length ) {
@@ -28,6 +68,17 @@ var Pods_AJAX_View_Processor = {
 			else {
 				Pods_AJAX_View_Processor.process_next();
 			}
+		}
+		else if ( pods_ajax_views_config.is_admin ) {
+			Pods_AJAX_View_Processor.progress_indicator.progress.progressbar( { value : 200 } );
+
+			var status_text = pods_ajax_views_config.status_complete;
+
+			if ( 1 < Pods_AJAX_View_Processor.total ) {
+				status_text = pods_ajax_views_config.status_complete_plural;
+			}
+
+			Pods_AJAX_View_Processor.progress_indicator.status.text( status_text );
 		}
 
 	},
@@ -45,11 +96,27 @@ var Pods_AJAX_View_Processor = {
 		var $view_container = jQuery( 'div.pods-ajax-view-loader-' + nonce );
 
 		// If view container found (and not already processed by another view in the queue)
-		if ( $view_container.length ) {
+		if ( $view_container.length || pods_ajax_views_config.is_admin ) {
+			var ajax_action = 'pods_ajax_view';
+
+			// Get current progress based on 0-100%
+			var progress_value = ( ( Pods_AJAX_View_Processor.total - Pods_AJAX_View_Processor.queue.length ) * 100 ) / Pods_AJAX_View_Processor.total;
+
+			if ( pods_ajax_views_config.is_admin ) {
+				ajax_action = 'pods_ajax_view_regenerate';
+
+				// Only do special calculation for first run to indicate progress is happening
+				if ( 0 === Pods_AJAX_View_Processor.progress_indicator.progress.progressbar( 'value' ) ) {
+					// Set value to x*2 because progress is 0-100% format, but progressbar is tracking 0-200 for pre/loaded indication
+					// We use (x*2)-1 because we want to show the indication of it getting ready to load
+					Pods_AJAX_View_Processor.progress_indicator.progress.progressbar( { value : ( Math.round( progress_value * 2 ) - 1 ) } );
+				}
+			}
+
 			jQuery.ajax( {
 				type : 'POST',
 				dataType : 'html',
-				url : pods_ajax_views_config.ajax_url + '?action=pods_ajax_view',
+				url : pods_ajax_views_config.ajax_url + '?action=' + ajax_action,
 				cache : false,
 				data : {
 					pods_ajax_view_key : cache_key,
@@ -58,9 +125,9 @@ var Pods_AJAX_View_Processor = {
 				},
 				success : function ( content ) {
 
-					// Handle
+					// Update progress indicator
 					if ( pods_ajax_views_config.is_admin ) {
-
+						Pods_AJAX_View_Processor.progress_indicator.progress.progressbar( { value : Math.round( progress_value * 2 ) } );
 					}
 					// Replace temporary container with the real content
 					else {
@@ -102,6 +169,7 @@ jQuery( function() {
 	if ( 'undefined' != typeof pods_ajax_views && {} != pods_ajax_views ) {
 		// Send to queue
 		Pods_AJAX_View_Processor.queue = Pods_AJAX_View_Processor.queue.concat( pods_ajax_views );
+		Pods_AJAX_View_Processor.total = Pods_AJAX_View_Processor.queue.length;
 
 		// Start processing
 		Pods_AJAX_View_Processor.process_next();

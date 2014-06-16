@@ -19,16 +19,27 @@ class Pods_AJAX_Views {
 			define( 'PODS_AJAX_VIEWS_STATS', false );
 		}
 
+		if ( ! defined( 'PODS_AJAX_VIEWS_OVERRIDE' ) ) {
+			define( 'PODS_AJAX_VIEWS_OVERRIDE', false );
+		}
+
 		if ( is_admin() ) {
 			include_once 'Pods_AJAX_Views_Admin.php';
 
+			// Init admin
 			add_action( 'init', array( 'Pods_AJAX_Views_Admin', 'init' ) );
+
+			// Register assets
+			add_action( 'admin_enqueue_scripts', array( __CLASS__, 'register_assets' ) );
 		}
 		else {
 			include_once 'Pods_AJAX_Views_Frontend.php';
 
+			// Init frontend
 			add_action( 'init', array( 'Pods_AJAX_Views_Frontend', 'init' ) );
-			add_action( 'pods_view_alt_view', array( 'Pods_AJAX_Views_Frontend', 'pods_view_alt' ) );
+
+			// Register assets
+			add_action( 'wp_enqueue_scripts', array( __CLASS__, 'register_assets' ) );
 		}
 
 	}
@@ -96,6 +107,7 @@ class Pods_AJAX_Views {
 
 			// Create / alter table handling
 			require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
+
 			dbDelta( $tables );
 		}
 
@@ -121,6 +133,28 @@ class Pods_AJAX_Views {
 
 		// Delete table if it exists
 		$wpdb->query( "DROP TABLE IF EXISTS `{$wpdb->prefix}podsviews`" );
+
+	}
+
+	/**
+	 * Register assets for Pods AJAX Views
+	 */
+	public function register_assets() {
+
+		// Register JS script for Pods AJAX View processing
+		wp_register_script( 'pods-ajax-views', plugins_url( 'js/pods-ajax-views.js', __FILE__ ), array( 'jquery' ), PODS_AJAX_VIEWS_VERSION, true );
+
+		// Setup config values for reference
+		$config = array(
+			'ajax_url' => admin_url( 'admin-ajax.php' ),
+			'version' => PODS_AJAX_VIEWS_VERSION,
+			'is_admin' => is_admin(),
+			'status_complete' => __( 'Pods AJAX View generated successfully', 'pods-ajax-views' ),
+			'status_complete_plural' => __( 'Pods AJAX Views generated successfully', 'pods-ajax-views' )
+		);
+
+		// Setup variable for output when JS enqueued
+		wp_localize_script( 'pods-ajax-views', 'pods_ajax_views_config', $config );
 
 	}
 

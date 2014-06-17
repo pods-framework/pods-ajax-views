@@ -698,6 +698,16 @@ class Pods_AJAX_Views_Frontend {
 			// Save AJAX View to transient for AJAX processing
 			set_transient( 'pods_ajax_view_' . md5( $cache_key . '/' . $cache_mode . '|' . $uri ), $pods_ajax_view_data );
 
+			// If stats enabled, start tracking data now
+			if ( defined( 'PODS_AJAX_VIEWS_STATS' ) && PODS_AJAX_VIEWS_STATS ) {
+				$data = $pods_ajax_view_data;
+
+				unset( $data[ '_data' ] );
+
+				// Save AJAX View data
+				self::save_ajax_view( $cache_key, $cache_mode, $uri, $data );
+			}
+
 			// Enqueue Pods AJAX Views JS
 			wp_enqueue_script( 'pods-ajax-views' );
 

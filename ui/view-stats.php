@@ -131,7 +131,7 @@ wp_enqueue_style( 'pods-form' );
 														if ( 'total_time' == $tracking_field ) {
 															continue;
 														}
-														elseif ( 'locations' == $tracking_field && empty( $tracking_value ) ) {
+														elseif ( is_array( $tracking_value ) && empty( $tracking_value ) ) {
 															continue;
 														}
 

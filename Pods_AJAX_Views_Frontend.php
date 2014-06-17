@@ -18,7 +18,7 @@ class Pods_AJAX_Views_Frontend {
 		add_action( 'pods_view_alt_view', array( 'Pods_AJAX_Views_Frontend', 'pods_view_alt' ) );
 
 		// Handle AJAX view requests to current page, let it go at top of hooks to avoid conflicts with other plugins
-		add_action( 'template_redirect', array( __CLASS__, 'frontend_ajax_view' ), 0 );
+		add_action( 'template_redirect', array( __CLASS__, 'frontend_ajax' ), 0 );
 
 	}
 
@@ -96,6 +96,45 @@ class Pods_AJAX_Views_Frontend {
 		}
 
 		return $expires;
+
+	}
+
+	/**
+	 * Handle URI for usage in calls
+	 *
+	 * @param string $uri Request URI
+	 *
+	 * @return string
+	 */
+	public static function get_uri( $uri = null ) {
+
+		if ( null === $uri ) {
+			$uri = $_SERVER[ 'REQUEST_URI' ];
+		}
+
+		if ( !empty( $uri ) ) {
+			$remove_args = array(
+				'pods_ajax_view_refresh' => false,
+				'pods_ajax_view_action' => false,
+				'pods_ajax_view_key' => false,
+				'pods_ajax_view_mode' => false,
+				'pods_ajax_view_nonce' => false,
+				'pods_ajax_view_api_key' => false
+			);
+
+			if ( false === strpos( $uri, '://' ) ) {
+				$uri = site_url( $uri );
+			}
+
+			$uri = add_query_arg( $remove_args, $uri );
+			$uri = explode( '#', $uri );
+			$uri = $uri[ 0 ];
+		}
+		else {
+			$uri = '';
+		}
+
+		return $uri;
 
 	}
 
@@ -227,10 +266,14 @@ class Pods_AJAX_Views_Frontend {
 	 *
 	 * @param string $cache_key Cache key
 	 * @param string $cache_mode Cache mode
+	 * @param string $uri Request URI
 	 *
 	 * @return array Array of AJAX View data
 	 */
-	public static function get_ajax_view( $cache_key, $cache_mode ) {
+	public static function get_ajax_view( $cache_key, $cache_mode, $uri = null ) {
+
+		// Format URI
+		$uri = self::get_uri( $uri );
 
 		// Restrict cache mode
 		$cache_mode = self::restrict_cache_mode( $cache_mode );
@@ -238,7 +281,7 @@ class Pods_AJAX_Views_Frontend {
 		$ajax_view = array();
 
 		// Get transient
-		$ajax_view_transient = get_transient( 'pods_ajax_view_' . md5( $cache_key . '/' . $cache_mode ) );
+		$ajax_view_transient = get_transient( 'pods_ajax_view_' . md5( $cache_key . '/' . $cache_mode . '|' . $uri ) );
 
 		// Get stats data
 		if ( defined( 'PODS_AJAX_VIEWS_STATS' ) && PODS_AJAX_VIEWS_STATS ) {
@@ -250,10 +293,10 @@ class Pods_AJAX_Views_Frontend {
 			$sql = "
 				SELECT *
 				FROM `{$wpdb->prefix}podsviews`
-				WHERE `cache_key` = %s AND `cache_mode` = %s
+				WHERE `cache_key` = %s AND `cache_mode` = %s AND `uri` = %s
 			";
 
-			$ajax_view = $wpdb->get_row( $wpdb->prepare( $sql, $cache_key, $cache_mode ), ARRAY_A );
+			$ajax_view = $wpdb->get_row( $wpdb->prepare( $sql, $cache_key, $cache_mode, $uri ), ARRAY_A );
 
 			if ( ! empty( $ajax_view ) ) {
 				$ajax_view = array_map( 'maybe_unserialize', $ajax_view );
@@ -277,11 +320,15 @@ class Pods_AJAX_Views_Frontend {
 	 *
 	 * @param string $cache_key Cache key
 	 * @param string $cache_mode Cache mode
+	 * @param string $uri Request URI
 	 * @param array $data AJAX View data
 	 *
 	 * @return bool
 	 */
-	public static function save_ajax_view( $cache_key, $cache_mode, $data ) {
+	public static function save_ajax_view( $cache_key, $cache_mode, $uri = null, $data = array() ) {
+
+		// Format URI
+		$uri = self::get_uri( $uri );
 
 		// Restrict cache mode
 		$cache_mode = self::restrict_cache_mode( $cache_mode );
@@ -296,6 +343,7 @@ class Pods_AJAX_Views_Frontend {
 			// Set cache data
 			$data[ 'cache_key' ]  = $cache_key;
 			$data[ 'cache_mode' ] = $cache_mode;
+			$data[ 'uri' ] = $uri;
 
 			if ( isset( $data[ 'expires' ] ) ) {
 				if ( false === $data[ 'expires' ] ) {
@@ -328,10 +376,14 @@ class Pods_AJAX_Views_Frontend {
 	 *
 	 * @param string $cache_key Cache key
 	 * @param string $cache_mode Cache mode
+	 * @param string $uri Request URI
 	 *
 	 * @return bool
 	 */
-	public static function delete_ajax_view( $cache_key, $cache_mode ) {
+	public static function delete_ajax_view( $cache_key, $cache_mode, $uri = null ) {
+
+		// Format URI
+		$uri = self::get_uri( $uri );
 
 		// Restrict cache mode
 		$cache_mode = self::restrict_cache_mode( $cache_mode );
@@ -350,9 +402,11 @@ class Pods_AJAX_Views_Frontend {
 				$wpdb->prefix . 'podsviews',
 				array(
 					'cache_key' => $cache_key,
-					'cache_mode' => $cache_mode
+					'cache_mode' => $cache_mode,
+					'uri' => $uri
 				),
 				array(
+					'%s',
 					'%s',
 					'%s'
 				)
@@ -360,7 +414,7 @@ class Pods_AJAX_Views_Frontend {
 		}
 
 		// Delete transient
-		delete_transient( 'pods_ajax_view_' . md5( $cache_key . '/' . $cache_mode ) );
+		delete_transient( 'pods_ajax_view_' . md5( $cache_key . '/' . $cache_mode . '|' . $uri ) );
 
 		return true;
 
@@ -401,13 +455,19 @@ class Pods_AJAX_Views_Frontend {
 	/**
 	 * Handle template_redirect integration to keep all queries on page accessible
 	 */
-	public static function frontend_ajax_view() {
+	public static function frontend_ajax() {
 
 		// Check if request is there
-		if ( ! empty( $_REQUEST[ 'pods_ajax_view_key' ] ) && ! empty( $_REQUEST[ 'pods_ajax_view_mode' ] ) && ! empty( $_REQUEST[ 'pods_ajax_view_nonce' ] ) ) {
+		if ( ! empty( $_REQUEST[ 'pods_ajax_view_action' ] ) ) {
 			include_once 'Pods_AJAX_Views_Admin.php';
 
-			Pods_AJAX_Views_Admin::admin_ajax_view();
+			echo '<!--pods_ajax_frontend_ajax ';
+			var_dump( method_exists( 'Pods_AJAX_Views_Admin', 'admin_ajax_' . $_REQUEST[ 'pods_ajax_view_action' ] ) );
+			echo '-->';
+
+			if ( method_exists( 'Pods_AJAX_Views_Admin', 'admin_ajax_' . $_REQUEST[ 'pods_ajax_view_action' ] ) ) {
+				call_user_func( array( 'Pods_AJAX_Views_Admin', 'admin_ajax_' . $_REQUEST[ 'pods_ajax_view_action' ] ) );
+			}
 		}
 
 	}
@@ -486,13 +546,8 @@ class Pods_AJAX_Views_Frontend {
 						'avg_time' => $total,
 						'total_time' => $total,
 						'total_calls' => 1,
-						'last_generated' => current_time( 'mysql' ),
-						'locations' => array()
+						'last_generated' => current_time( 'mysql' )
 					);
-
-					if ( ! empty( $ajax_view[ '_data' ][ 'uri' ] ) && ! $manual_action ) {
-						$tracking_data[ 'locations' ][] = $ajax_view[ '_data' ][ 'uri' ];
-					}
 
 					// Merge tracking data if path called from before
 					if ( ! empty( $ajax_view[ 'tracking_data' ] ) && ! empty( $ajax_view[ 'tracking_data' ][ $ajax_view[ '_data' ][ 'path' ] ] ) ) {
@@ -504,10 +559,6 @@ class Pods_AJAX_Views_Frontend {
 						$tracking_data[ 'total_calls' ]   += 1;
 						$tracking_data[ 'avg_time' ]       = $tracking_data[ 'total_time' ] / $tracking_data[ 'total_calls' ];
 						$tracking_data[ 'last_generated' ] = current_time( 'mysql' );
-
-						if ( ! empty( $ajax_view[ '_data' ][ 'uri' ] ) && ! in_array( $ajax_view[ 'uri' ], $tracking_data[ 'locations' ] ) ) {
-							$tracking_data[ 'locations' ][] = $ajax_view[ 'uri' ];
-						}
 					}
 
 					// Set tracking data to be saved for path
@@ -515,7 +566,7 @@ class Pods_AJAX_Views_Frontend {
 				}
 
 				// Save AJAX View data
-				self::save_ajax_view( $cache_key, $cache_mode, $data );
+				self::save_ajax_view( $cache_key, $cache_mode, $ajax_view[ 'uri' ], $data );
 			}
 		}
 
@@ -629,30 +680,29 @@ class Pods_AJAX_Views_Frontend {
 			}
 
 			// Setup URI
-			$uri = str_replace( array( '?pods_ajax_view_refresh=1', '&pods_ajax_view_refresh=1' ), array( '?', '' ), $_SERVER[ 'REQUEST_URI' ] );
-			$uri = trim( $uri, '?' );
+			$uri = self::get_uri();
 
 			// Setup data to save to transient
-			$data = array(
+			$pods_ajax_view_data = array(
 				'cache_key' => $cache_key,
 				'cache_mode' => $cache_mode,
+				'uri' => $uri,
 				'view' => $view,
 				'view_data' => $data,
 				'expires' => $expires,
 				'_data' => array(
-					'path' => $path,
-					'uri' => $uri
+					'path' => $path
 				)
 			);
 
 			// Save AJAX View to transient for AJAX processing
-			set_transient( 'pods_ajax_view_' . md5( $cache_key . '/' . $cache_mode ), $data );
+			set_transient( 'pods_ajax_view_' . md5( $cache_key . '/' . $cache_mode . '|' . $uri ), $pods_ajax_view_data );
 
 			// Enqueue Pods AJAX Views JS
 			wp_enqueue_script( 'pods-ajax-views' );
 
 			// Build nonce action from request
-			$nonce_action = 'pods-ajax-view-' . md5( $cache_key . '/' . $cache_mode );
+			$nonce_action = 'pods-ajax-view-' . md5( $cache_key . '/' . $cache_mode . '|' . $uri );
 
 			// Build nonce from action
 			$nonce = wp_create_nonce( $nonce_action );
@@ -661,7 +711,8 @@ class Pods_AJAX_Views_Frontend {
 			$pods_ajax_view = array(
 				'cache_key' => $cache_key,
 				'cache_mode' => $cache_mode,
-				'nonce' => $nonce
+				'nonce' => $nonce,
+				'uri' => $uri
 			);
 
 			// Queue view to be included via AJAX

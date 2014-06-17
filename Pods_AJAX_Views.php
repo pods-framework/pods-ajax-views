@@ -92,6 +92,7 @@ class Pods_AJAX_Views {
 					`view_id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
 					`cache_key` VARCHAR(255) NOT NULL,
 					`cache_mode` VARCHAR(14) NOT NULL,
+					`uri` VARCHAR(255) NOT NULL,
 					`view` LONGTEXT NOT NULL,
 					`view_data` LONGTEXT NOT NULL,
 					`expires` INT(10) UNSIGNED NOT NULL,
@@ -101,7 +102,7 @@ class Pods_AJAX_Views {
 					`last_generated` DATETIME NOT NULL,
 					`tracking_data` LONGTEXT NOT NULL,
 					PRIMARY KEY (`view_id`),
-					UNIQUE INDEX `cache_key_mode` (`cache_key`, `cache_mode`)
+					UNIQUE INDEX `cache_key_mode` (`cache_key`, `cache_mode`, `uri`)
 				)
 			";
 

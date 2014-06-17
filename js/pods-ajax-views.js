@@ -62,7 +62,7 @@ var Pods_AJAX_View_Processor = {
 
 			// Check for valid view data, then load the view
 			if ( 'undefined' != typeof view.cache_key && 'undefined' != typeof view.cache_mode && 'undefined' != typeof view.nonce ) {
-				Pods_AJAX_View_Processor.load_view( view.cache_key, view.cache_mode, view.nonce );
+				Pods_AJAX_View_Processor.load_view( view.cache_key, view.cache_mode, view.nonce, view.uri );
 			}
 			// If invalid, process next view from the queue
 			else {
@@ -86,27 +86,25 @@ var Pods_AJAX_View_Processor = {
 	/**
 	 * Load Pods AJAX View
 	 *
-	 * @param cache_key
-	 * @param cache_mode
-	 * @param nonce
+	 * @param cache_key Cache key
+	 * @param cache_mode Cache mode
+	 * @param nonce Nonce
+	 * @param uri Current URI
 	 */
-	load_view : function( cache_key, cache_mode, nonce ) {
+	load_view : function( cache_key, cache_mode, nonce, uri ) {
 
 		// Get view container(s)
 		var $view_container = jQuery( 'div.pods-ajax-view-loader-' + nonce );
 
 		// If view container found (and not already processed by another view in the queue)
 		if ( $view_container.length || pods_ajax_views_config.is_admin ) {
-			var pods_ajax_views_url = document.location.href;
-
-			pods_ajax_views_url = pods_ajax_views_url.replace( '?pods_ajax_view_refresh=1', '' );
-			pods_ajax_views_url = pods_ajax_views_url.replace( '&pods_ajax_view_refresh=1', '' );
+			var pods_ajax_view_action = 'view';
 
 			// Get current progress based on 0-100%
 			var progress_value = ( ( Pods_AJAX_View_Processor.total - Pods_AJAX_View_Processor.queue.length ) * 100 ) / Pods_AJAX_View_Processor.total;
 
 			if ( pods_ajax_views_config.is_admin ) {
-				ajax_url = pods_ajax_views_config.ajax_url + '?action=pods_ajax_view_regenerate';
+				pods_ajax_view_action = 'view_regenerate';
 
 				// Only do special calculation for first run to indicate progress is happening
 				if ( 0 === Pods_AJAX_View_Processor.progress_indicator.progress.progressbar( 'value' ) ) {
@@ -116,12 +114,17 @@ var Pods_AJAX_View_Processor = {
 				}
 			}
 
+			if ( '' == uri ) {
+				uri = pods_ajax_views_config.ajax_url + '?action=pods_ajax_' . pods_ajax_view_action;
+			}
+
 			jQuery.ajax( {
 				type : 'POST',
 				dataType : 'html',
-				url : pods_ajax_views_url,
+				url : uri,
 				cache : false,
 				data : {
+					pods_ajax_view_action : pods_ajax_view_action,
 					pods_ajax_view_key : cache_key,
 					pods_ajax_view_mode : cache_mode,
 					pods_ajax_view_nonce : nonce

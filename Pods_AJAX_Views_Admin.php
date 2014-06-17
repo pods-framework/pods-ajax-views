@@ -16,8 +16,8 @@ class Pods_AJAX_Views_Admin {
 		add_action( 'wp_ajax_pods_ajax_view', array( __CLASS__, 'admin_ajax_view' ) );
 		add_action( 'wp_ajax_nopriv_pods_ajax_view', array( __CLASS__, 'admin_ajax_view' ) );
 
-		add_action( 'wp_ajax_pods_ajax_view_regenerate', array( __CLASS__, 'admin_ajax_regenerate' ) );
-		add_action( 'wp_ajax_nopriv_pods_ajax_view_regenerate', array( __CLASS__, 'admin_ajax_regenerate' ) );
+		add_action( 'wp_ajax_pods_ajax_view_regenerate', array( __CLASS__, 'admin_ajax_view_regenerate' ) );
+		add_action( 'wp_ajax_nopriv_pods_ajax_view_regenerate', array( __CLASS__, 'admin_ajax_view_regenerate' ) );
 
 		add_action( 'wp_ajax_pods_ajax_view_sitemap', array( __CLASS__, 'admin_ajax_view_sitemap' ) );
 		add_action( 'wp_ajax_nopriv_pods_ajax_view_sitemap', array( __CLASS__, 'admin_ajax_view_sitemap' ) );
@@ -69,6 +69,11 @@ class Pods_AJAX_Views_Admin {
 						'label' => 'Cache Mode',
 						'type' => 'text',
 						'width' => '10%'
+					),
+					'uri' => array(
+						'name' => 'uri',
+						'label' => 'URL',
+						'type' => 'text'
 					),
 					'expires' => array(
 						'name' => 'expires',
@@ -309,9 +314,10 @@ class Pods_AJAX_Views_Admin {
 			// Set cache key / mode for noncing
 			$cache_key  = $view->cache_key;
 			$cache_mode = $view->cache_mode;
+			$uri        = $view->uri;
 
 			// Build nonce action from request
-			$nonce_action = 'pods-ajax-view-' . md5( $cache_key . '/' . $cache_mode ) . '/regenerate';
+			$nonce_action = 'pods-ajax-view-' . md5( $cache_key . '/' . $cache_mode . '|' . $uri ) . '/regenerate';
 
 			// Build nonce from action
 			$nonce = wp_create_nonce( $nonce_action );
@@ -320,7 +326,8 @@ class Pods_AJAX_Views_Admin {
 			$pods_ajax_views[] = array(
 				'cache_key' => $cache_key,
 				'cache_mode' => $cache_mode,
-				'nonce' => $nonce
+				'nonce' => $nonce,
+				'uri' => $uri
 			);
 		}
 
@@ -355,8 +362,10 @@ class Pods_AJAX_Views_Admin {
 
 		// Check if request is there
 		if ( ! empty( $_REQUEST[ 'pods_ajax_view_key' ] ) && ! empty( $_REQUEST[ 'pods_ajax_view_mode' ] ) && ! empty( $_REQUEST[ 'pods_ajax_view_nonce' ] ) ) {
+			$uri = Pods_AJAX_Views_Frontend::get_uri();
+
 			// Build nonce action from request
-			$nonce_action = 'pods-ajax-view-' . md5( $_REQUEST[ 'pods_ajax_view_key' ] . '/' . $_REQUEST[ 'pods_ajax_view_mode' ] );
+			$nonce_action = 'pods-ajax-view-' . md5( $_REQUEST[ 'pods_ajax_view_key' ] . '/' . $_REQUEST[ 'pods_ajax_view_mode' ] . '|' . $uri );
 
 			// Verify nonce is correct
 			if ( false !== wp_verify_nonce( $_REQUEST[ 'pods_ajax_view_nonce' ], $nonce_action ) ) {
@@ -378,35 +387,48 @@ class Pods_AJAX_Views_Admin {
 	/**
 	 * Handle the Admin AJAX request for a Pods AJAX View regeneration
 	 */
-	public static function admin_ajax_regenerate() {
+	public static function admin_ajax_view_regenerate() {
 
 		include_once 'Pods_AJAX_Views_Frontend.php';
 
 		// Check if request uses API key, and if incorrect, don't serve request
-		if ( isset( $_REQUEST[ 'api_key' ] ) ) {
-			if ( ! defined( 'PODS_AJAX_VIEWS_API_KEY' ) || PODS_AJAX_VIEWS_API_KEY != $_REQUEST[ 'api_key' ]  ) {
+		if ( isset( $_REQUEST[ 'pods_ajax_view_api_key' ] ) ) {
+			if ( ! defined( 'PODS_AJAX_VIEWS_API_KEY' ) || PODS_AJAX_VIEWS_API_KEY != $_REQUEST[ 'pods_ajax_view_api_key' ]  ) {
 				die();
 			}
 		}
 		// If user is not logged in or not a Pods admin, don't serve request
 		elseif ( ! is_user_logged_in() || ! pods_is_admin( 'pods' ) ) {
-			die();
+			// AJAX must die, won't break if doing template_redirect hook
+			if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
+				die();
+			}
 		}
 
 		// Check if request is there
 		if ( ! empty( $_REQUEST[ 'pods_ajax_view_key' ] ) && ! empty( $_REQUEST[ 'pods_ajax_view_mode' ] ) && ! empty( $_REQUEST[ 'pods_ajax_view_nonce' ] ) ) {
+			$uri = Pods_AJAX_Views_Frontend::get_uri();
+
 			// Build nonce action from request
-			$nonce_action = 'pods-ajax-view-' . md5( $_REQUEST[ 'pods_ajax_view_key' ] . '/' . $_REQUEST[ 'pods_ajax_view_mode' ] ) . '/regenerate';
+			$nonce_action = 'pods-ajax-view-' . md5( $_REQUEST[ 'pods_ajax_view_key' ] . '/' . $_REQUEST[ 'pods_ajax_view_mode' ] . '|' . $uri ) . '/regenerate';
 
 			// Verify nonce is correct
 			if ( false !== wp_verify_nonce( $_REQUEST[ 'pods_ajax_view_nonce' ], $nonce_action ) ) {
 				// Generate view and cache it
 				Pods_AJAX_Views_Frontend::generate_view( $_REQUEST[ 'pods_ajax_view_key' ], $_REQUEST[ 'pods_ajax_view_mode' ], true, true );
 			}
+			else {
+				var_dump( 'invalid nonce' );
+			}
+
+			// Bail (needed here if using template_redirect request)
+			die();
 		}
 
-		// AJAX must die
-		die();
+		// AJAX must die, won't break if doing template_redirect hook
+		if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
+			die();
+		}
 
 	}
 
@@ -423,8 +445,8 @@ class Pods_AJAX_Views_Admin {
 		global $wpdb;
 
 		// Check if request uses API key, and if incorrect, don't serve request
-		if ( isset( $_REQUEST[ 'api_key' ] ) ) {
-			if ( ! defined( 'PODS_AJAX_VIEWS_API_KEY' ) || PODS_AJAX_VIEWS_API_KEY != $_REQUEST[ 'api_key' ]  ) {
+		if ( isset( $_REQUEST[ 'pods_ajax_view_api_key' ] ) ) {
+			if ( ! defined( 'PODS_AJAX_VIEWS_API_KEY' ) || PODS_AJAX_VIEWS_API_KEY != $_REQUEST[ 'pods_ajax_view_api_key' ]  ) {
 				die();
 			}
 		}
@@ -465,15 +487,22 @@ class Pods_AJAX_Views_Admin {
 
 		foreach ( $views as $view ) {
 			// Build nonce action
-			$nonce_action = 'pods-ajax-view-' . md5( $view->cache_key . '/' . $view->cache_mode ) . '/regenerate';
+			$nonce_action = 'pods-ajax-view-' . md5( $view->cache_key . '/' . $view->cache_mode . '|' . $view->uri ) . '/regenerate';
 			$nonce = wp_create_nonce( $nonce_action );
 
-			$loc = admin_url( 'admin-ajax.php' );
-			$loc .= '?action=pods_ajax_view_regenerate'
-				. '&pods_ajax_view_key=' . urlencode( $view->cache_key )
-				. '&pods_ajax_view_mode=' . urlencode( $view->cache_mode )
-				. '&pods_ajax_view_nonce=' . urlencode( $nonce )
-				. '&api_key=' . urlencode( PODS_AJAX_VIEWS_API_KEY );
+			$loc = $view->uri;
+
+			$query_args = array(
+				'pods_ajax_view_action' => 'view_regenerate',
+				'pods_ajax_view_key' => $view->cache_key,
+				'pods_ajax_view_mode' => $view->cache_mode,
+				'pods_ajax_view_nonce' => $nonce,
+				'pods_ajax_view_api_key' => PODS_AJAX_VIEWS_API_KEY
+			);
+
+			$loc = add_query_arg( $query_args, $loc );
+
+			$loc = esc_url( $loc );
 
 			// Sanitize URL for XML
 			$loc = str_replace( '&', '&amp;', $loc );
@@ -481,6 +510,14 @@ class Pods_AJAX_Views_Admin {
 			$loc = str_replace( '"', '&quot;', $loc );
 			$loc = str_replace( '>', '&gt;', $loc );
 			$loc = str_replace( '<', '&lt;', $loc );
+
+			// Sanitize URL for XML
+			$uri = $view->uri;
+			$uri = str_replace( '&', '&amp;', $uri );
+			$uri = str_replace( "'", '&apos;', $uri );
+			$uri = str_replace( '"', '&quot;', $uri );
+			$uri = str_replace( '>', '&gt;', $uri );
+			$uri = str_replace( '<', '&lt;', $uri );
 
 			$lastmod = $view->last_generated;
 

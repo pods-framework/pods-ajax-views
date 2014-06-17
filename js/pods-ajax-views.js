@@ -114,7 +114,7 @@ var Pods_AJAX_View_Processor = {
 				}
 			}
 
-			if ( '' == uri ) {
+			if ( '' === uri ) {
 				uri = pods_ajax_views_config.ajax_url + '?action=pods_ajax_' . pods_ajax_view_action;
 			}
 

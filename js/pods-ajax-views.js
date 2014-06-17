@@ -97,13 +97,16 @@ var Pods_AJAX_View_Processor = {
 
 		// If view container found (and not already processed by another view in the queue)
 		if ( $view_container.length || pods_ajax_views_config.is_admin ) {
-			var ajax_action = 'pods_ajax_view';
+			var pods_ajax_views_url = document.location.href;
+
+			pods_ajax_views_url = pods_ajax_views_url.replace( '?pods_ajax_view_refresh=1', '' );
+			pods_ajax_views_url = pods_ajax_views_url.replace( '&pods_ajax_view_refresh=1', '' );
 
 			// Get current progress based on 0-100%
 			var progress_value = ( ( Pods_AJAX_View_Processor.total - Pods_AJAX_View_Processor.queue.length ) * 100 ) / Pods_AJAX_View_Processor.total;
 
 			if ( pods_ajax_views_config.is_admin ) {
-				ajax_action = 'pods_ajax_view_regenerate';
+				ajax_url = pods_ajax_views_config.ajax_url + '?action=pods_ajax_view_regenerate';
 
 				// Only do special calculation for first run to indicate progress is happening
 				if ( 0 === Pods_AJAX_View_Processor.progress_indicator.progress.progressbar( 'value' ) ) {
@@ -116,7 +119,7 @@ var Pods_AJAX_View_Processor = {
 			jQuery.ajax( {
 				type : 'POST',
 				dataType : 'html',
-				url : pods_ajax_views_config.ajax_url + '?action=' + ajax_action,
+				url : pods_ajax_views_url,
 				cache : false,
 				data : {
 					pods_ajax_view_key : cache_key,

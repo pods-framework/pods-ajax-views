@@ -30,7 +30,7 @@ Use the same way as `pods_view`, it accepts the same arguments, except one addit
 
 `pods_ajax_view( 'my-big-cached-template.php' );`
 
-Beware that AJAXed views are loaded from AJAX, not through the current page. They do not have access to the current WP_Query or Query variables, or the Post loop. If you want to pass anything into it, use the $data argument.
+AJAX requests are done through the same URL, so you still have access to the query and postdata like normal. We hook into template_redirect to stop Beware that AJAXed views are loaded from AJAX, not through the current page. They do not have access to the current WP_Query or Query variables, or the Post loop. If you want to pass anything into it, use the $data argument.
 
 For information about `pods_view`, see these resources:
 

@@ -17,6 +17,9 @@ class Pods_AJAX_Views_Frontend {
 		// Override default functionality of pods_view to use pods_ajax_view
 		add_action( 'pods_view_alt_view', array( 'Pods_AJAX_Views_Frontend', 'pods_view_alt' ) );
 
+		// Handle AJAX view requests to current page, let it go at top of hooks to avoid conflicts with other plugins
+		add_action( 'template_redirect', array( __CLASS__, 'frontend_ajax_view' ), 0 );
+
 	}
 
 	/**
@@ -396,6 +399,20 @@ class Pods_AJAX_Views_Frontend {
 	}
 
 	/**
+	 * Handle template_redirect integration to keep all queries on page accessible
+	 */
+	public static function frontend_ajax_view() {
+
+		// Check if request is there
+		if ( ! empty( $_REQUEST[ 'pods_ajax_view_key' ] ) && ! empty( $_REQUEST[ 'pods_ajax_view_mode' ] ) && ! empty( $_REQUEST[ 'pods_ajax_view_nonce' ] ) ) {
+			include_once 'Pods_AJAX_Views_Admin.php';
+
+			Pods_AJAX_Views_Admin::admin_ajax_view();
+		}
+
+	}
+
+	/**
 	 * Generate Pods View from AJAX View
 	 *
 	 * @param string $cache_key Cache key
@@ -579,9 +596,8 @@ class Pods_AJAX_Views_Frontend {
 				$expires = '-1';
 			}
 
-			// Setup path / uri information
+			// Setup path information
 			$path = '';
-			$uri  = '';
 
 			// Get backtrace to build path information
 			$debug_backtrace = debug_backtrace();

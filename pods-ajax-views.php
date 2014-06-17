@@ -9,7 +9,7 @@ Author URI: http://pods.io/
 */
 
 // Pods AJAX Views version
-define( 'PODS_AJAX_VIEWS_VERSION', '0.2' );
+define( 'PODS_AJAX_VIEWS_VERSION', '0.2.1' );
 
 // Include class
 include_once 'Pods_AJAX_Views.php';

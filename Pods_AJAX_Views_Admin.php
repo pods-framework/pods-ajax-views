@@ -362,11 +362,16 @@ class Pods_AJAX_Views_Admin {
 			if ( false !== wp_verify_nonce( $_REQUEST[ 'pods_ajax_view_nonce' ], $nonce_action ) ) {
 				// Generate view and cache it
 				Pods_AJAX_Views_Frontend::generate_view( $_REQUEST[ 'pods_ajax_view_key' ], $_REQUEST[ 'pods_ajax_view_mode' ] );
+
+				// View found, bail (needed here if using template_redirect request)
+				die();
 			}
 		}
 
-		// AJAX must die
-		die();
+		// AJAX must die, won't break if doing template_redirect hook
+		if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
+			die();
+		}
 
 	}
 
@@ -379,7 +384,7 @@ class Pods_AJAX_Views_Admin {
 
 		// Check if request uses API key, and if incorrect, don't serve request
 		if ( isset( $_REQUEST[ 'api_key' ] ) ) {
-			if ( ! defined( 'PODS_AJAX_VIEWS_API_KEY' ) && PODS_AJAX_VIEWS_API_KEY != $_REQUEST[ 'api_key' ]  ) {
+			if ( ! defined( 'PODS_AJAX_VIEWS_API_KEY' ) || PODS_AJAX_VIEWS_API_KEY != $_REQUEST[ 'api_key' ]  ) {
 				die();
 			}
 		}
@@ -410,16 +415,16 @@ class Pods_AJAX_Views_Admin {
 	 */
 	public static function admin_ajax_view_sitemap() {
 
+		@header( 'Content-Type: text/xml; charset=' . get_option( 'blog_charset' ) );
+
 		/**
 		 * @var $wpdb wpdb
 		 */
 		global $wpdb;
 
-		include_once 'Pods_AJAX_Views_Frontend.php';
-
 		// Check if request uses API key, and if incorrect, don't serve request
 		if ( isset( $_REQUEST[ 'api_key' ] ) ) {
-			if ( ! defined( 'PODS_AJAX_VIEWS_API_KEY' ) && PODS_AJAX_VIEWS_API_KEY != $_REQUEST[ 'api_key' ]  ) {
+			if ( ! defined( 'PODS_AJAX_VIEWS_API_KEY' ) || PODS_AJAX_VIEWS_API_KEY != $_REQUEST[ 'api_key' ]  ) {
 				die();
 			}
 		}
@@ -427,9 +432,6 @@ class Pods_AJAX_Views_Admin {
 		elseif ( ! is_user_logged_in() || ! pods_is_admin( 'pods' ) ) {
 			die();
 		}
-
-		// XML header
-		header( 'Content-Type: text/xml' );
 
 		// XML opening tag
 		echo '<' . '?xml version="1.0" encoding="' . get_bloginfo( 'charset' ) . '"?' . '>' . "\n";

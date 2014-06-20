@@ -66,6 +66,6 @@ Check out our GitHub for a list of contributors, or search our GitHub issues to 
 
 == Changelog ==
 
-= 1.0 - June 16, 2014 =
+= 1.0 - June 19th, 2014 =
 * First official release!
 * Found a bug? Have a great feature idea? Get on GitHub and tell us about it and we'll get right on it: [github.com/pods-framework/pods-ajax-views/issues/new](https://github.com/pods-framework/pods-ajax-views/issues/new)

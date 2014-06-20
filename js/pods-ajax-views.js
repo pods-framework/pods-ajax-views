@@ -80,6 +80,33 @@ var Pods_AJAX_View_Processor = {
 
 			Pods_AJAX_View_Processor.progress_indicator.status.text( status_text );
 		}
+		else if ( 0 < Pods_AJAX_View_Processor.total && pods_ajax_views_config.additional_urls.length ) {
+			var additional_url, k;
+
+			for ( k in pods_ajax_views_config.additional_urls ) {
+				additional_url = pods_ajax_views_config.additional_urls[ k ];
+
+				jQuery.ajax( {
+					type : 'POST',
+					dataType : 'html',
+					url : additional_url,
+					cache : false,
+					success : function ( content ) {
+
+
+
+					},
+					error : function ( jqXHR, textStatus, errorThrown ) {
+
+						// Log error if console is available
+						if ( window.console ) {
+							console.log( 'Pods AJAX View Error: ' + errorThrown + ' (' + additional_url + ')' );
+						}
+
+					}
+				} );
+			}
+		}
 
 	},
 

@@ -10,7 +10,7 @@ class Pods_AJAX_Views_Admin {
 	public static function init() {
 
 		// Admin UI
-		add_action( 'admin_menu', array( __CLASS__, 'admin_menu' ) );
+		add_filter( 'pods_admin_components_menu', array( __CLASS__, 'admin_menu' ) );
 
 		// Admin AJAX callbacks
 		add_action( 'wp_ajax_pods_ajax_view', array( __CLASS__, 'admin_ajax_view' ) );
@@ -26,12 +26,23 @@ class Pods_AJAX_Views_Admin {
 
 	/**
 	 * Add options page to menu
+	 *
+	 * @param array $admin_menus The submenu items in Pods Admin menu.
+	 *
+	 * @return mixed
+	 *
+	 * @since 0.0.1
 	 */
-	public static function admin_menu() {
+	public static function admin_menu( $admin_menus ) {
 
-		if ( Pods_AJAX_Views::is_compatible() && pods_is_admin( 'pods' ) ) {
-			add_options_page( __( 'Pods AJAX Views', 'pods-ajax-views' ), __( 'Pods AJAX Views', 'pods-ajax-views' ), 'read', 'pods-ajax-views', array( __CLASS__, 'admin_page' ) );
-		}
+		$admin_menus[ 'AJAX Views' ] = array(
+			'menu_page' => 'pods-ajax-views',
+			'page_title' => __( 'Pods AJAX Views', 'pods-ajax-views' ),
+			'capability' => 'manage_options',
+			'callback' => array( __CLASS__, 'admin_page' )
+		);
+
+		return $admin_menus;
 
 	}
 
@@ -358,6 +369,11 @@ class Pods_AJAX_Views_Admin {
 	 */
 	public static function admin_ajax_view() {
 
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			@ini_set( 'display_errors', 'on' );
+			@error_reporting( E_ALL | E_STRICT );
+		}
+
 		include_once 'Pods_AJAX_Views_Frontend.php';
 
 		// Check if request is there
@@ -389,6 +405,8 @@ class Pods_AJAX_Views_Admin {
 	 */
 	public static function admin_ajax_view_regenerate() {
 
+		@header( 'Cache-Control: private, max-age=0, no-cache' );
+
 		include_once 'Pods_AJAX_Views_Frontend.php';
 
 		// Check if request uses API key, and if incorrect, don't serve request
@@ -416,9 +434,6 @@ class Pods_AJAX_Views_Admin {
 			if ( false !== wp_verify_nonce( $_REQUEST[ 'pods_ajax_view_nonce' ], $nonce_action ) ) {
 				// Generate view and cache it
 				Pods_AJAX_Views_Frontend::generate_view( $_REQUEST[ 'pods_ajax_view_key' ], $_REQUEST[ 'pods_ajax_view_mode' ], true, true );
-			}
-			else {
-				var_dump( 'invalid nonce' );
 			}
 
 			// Bail (needed here if using template_redirect request)
@@ -463,7 +478,7 @@ class Pods_AJAX_Views_Admin {
 			. ' xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd"'
 			. ' xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
 
-		$limit = 100;
+		$limit = 250;
 
 		if ( defined( 'PODS_AJAX_VIEWS_SITEMAP_LIMIT' ) ) {
 			$limit = (int) PODS_AJAX_VIEWS_SITEMAP_LIMIT;
@@ -550,6 +565,87 @@ class Pods_AJAX_Views_Admin {
 		}
 
 		echo '</urlset>';
+
+		// AJAX must die
+		die();
+
+	}
+
+	public static function admin_ajax_clean_anon_cache() {
+
+		@header( 'Cache-Control: private, max-age=0, no-cache' );
+
+		// Check if request is there
+		if ( ! empty( $_REQUEST[ 'pods_ajax_view_url' ] ) && ! empty( $_REQUEST[ 'pods_ajax_view_nonce' ] ) ) {
+			include_once 'Pods_AJAX_Views_Frontend.php';
+
+			$uri = Pods_AJAX_Views_Frontend::get_uri( $_REQUEST[ 'pods_ajax_view_url' ] );
+
+			// Build nonce action from request
+			$nonce_action = 'pods-ajax-view-' . md5( $uri ) . '/clean';
+
+			// Verify nonce is correct
+			if ( false !== wp_verify_nonce( $_REQUEST[ 'pods_ajax_view_nonce' ], $nonce_action ) ) {
+				// WPEngine
+				// Credit: https://github.com/cftp/WPEngine-Clear-URL-Cache
+				if ( defined( 'WPE_PLUGIN_VERSION' ) ) {
+					global $wpe_varnish_servers, $wpe_ec_servers;
+
+					$post_parts = parse_url( $uri );
+					$post_uri = $post_parts[ 'path' ];
+
+					if ( ! empty( $post_parts[ 'query' ] ) ) {
+						$post_uri .= '?' . $post_parts[ 'query' ];
+					}
+
+					$path = $post_uri;
+
+					if ( ! $path ) {
+						$path = '/';
+					}
+
+					$hostname = $post_parts[ 'host' ];
+
+					if ( 'pod' == WPE_CLUSTER_TYPE ) {
+						$wpe_varnish_servers = array( 'localhost' );
+					}
+					elseif ( ! isset( $wpe_varnish_servers ) ) {
+						if ( 'pod' == WPE_CLUSTER_TYPE ) {
+							$lbmaster = 'localhost';
+						}
+						elseif ( ! defined( 'WPE_CLUSTER_ID' ) || ! WPE_CLUSTER_ID ) {
+							$lbmaster = 'lbmaster';
+						}
+						elseif ( 4 <= WPE_CLUSTER_ID ) {
+							$lbmaster = 'localhost';
+						}
+						else {
+							$lbmaster = 'lbmaster-' . WPE_CLUSTER_ID;
+						}
+
+						$wpe_varnish_servers = array( $lbmaster );
+					}
+
+					if ( ! isset( $wpe_ec_servers ) || empty( $wpe_ec_servers ) ) {
+						foreach ( $wpe_varnish_servers as $varnish ) {
+							if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+								error_log( "Pods AJAX Views: PURGE, {$varnish}, 9002, {$hostname}, {$path}, array(), 0" );
+							}
+
+							WpeCommon::http_request_async( 'PURGE', $varnish, 9002, $hostname, $path, array(), 0 );
+						}
+					}
+				}
+				// W3TC
+				elseif ( 1 == 0 ) {
+
+				}
+				// Others?
+				elseif ( 1 == 0 ) {
+
+				}
+			}
+		}
 
 		// AJAX must die
 		die();

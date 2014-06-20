@@ -5,9 +5,24 @@
 class Pods_AJAX_Views_Frontend {
 
 	/**
+	 * @var bool
+	 */
+	public static $debug = false;
+
+	/**
 	 * @var array $cache_modes Array of available cache modes
 	 */
 	public static $cache_modes = array();
+
+	/**
+	 * @var bool
+	 */
+	public static $in_view = false;
+
+	/**
+	 * @var array
+	 */
+	public static $view_counters = array();
 
 	/**
 	 * Setup default constants, add hooks
@@ -15,10 +30,13 @@ class Pods_AJAX_Views_Frontend {
 	public static function init() {
 
 		// Override default functionality of pods_view to use pods_ajax_view
-		add_action( 'pods_view_alt_view', array( 'Pods_AJAX_Views_Frontend', 'pods_view_alt' ) );
+		add_action( 'pods_view_alt_view', array( 'Pods_AJAX_Views_Frontend', 'pods_view_alt_view' ) );
 
 		// Handle AJAX view requests to current page, let it go at top of hooks to avoid conflicts with other plugins
 		add_action( 'template_redirect', array( __CLASS__, 'frontend_ajax' ), 0 );
+
+		// Enable debugging
+		self::$debug = apply_filters( 'pods_ajax_views_debug', self::$debug );
 
 	}
 
@@ -121,6 +139,16 @@ class Pods_AJAX_Views_Frontend {
 				'pods_ajax_view_nonce' => false,
 				'pods_ajax_view_api_key' => false
 			);
+
+			$strict = true;
+
+			if ( defined( 'PODS_AJAX_VIEW_STRICT_URI' ) && ! PODS_AJAX_VIEW_STRICT_URI ) {
+				$strict = false;
+			}
+
+			if ( $strict ) {
+				$remove_args = array_map( '__return_false', $_GET );
+			}
 
 			if ( false === strpos( $uri, '://' ) ) {
 				$uri = site_url( $uri );
@@ -359,12 +387,36 @@ class Pods_AJAX_Views_Frontend {
 			// Setup format for wpdb::prepare
 			$format = array_fill( 0, count( $data ), '%s' );
 
-			// REPLACE INTO
-			$wpdb->replace(
-				$wpdb->prefix . 'podsviews',
-				$data,
-				$format
-			);
+			if ( empty( $data[ 'view_id' ] ) ) {
+				$sql = "
+					SELECT `view_id`
+					FROM `{$wpdb->prefix}podsviews`
+					WHERE `cache_key` = %s AND `cache_mode` = %s AND `uri` = %s
+				";
+
+				$view_id = $wpdb->get_var( $wpdb->prepare( $sql, $cache_key, $cache_mode, $uri ) );
+			}
+			else {
+				$view_id = (int) $data[ 'view_id' ];
+			}
+
+			if ( $view_id ) {
+				$wpdb->update(
+					$wpdb->prefix . 'podsviews',
+					$data,
+					array( 'view_id' => $view_id ),
+					$format,
+					array( '%d' )
+				);
+			}
+			else {
+				// REPLACE INTO
+				$wpdb->replace(
+					$wpdb->prefix . 'podsviews',
+					$data,
+					$format
+				);
+			}
 		}
 
 		return true;
@@ -461,10 +513,6 @@ class Pods_AJAX_Views_Frontend {
 		if ( ! empty( $_REQUEST[ 'pods_ajax_view_action' ] ) ) {
 			include_once 'Pods_AJAX_Views_Admin.php';
 
-			echo '<!--pods_ajax_frontend_ajax ';
-			var_dump( method_exists( 'Pods_AJAX_Views_Admin', 'admin_ajax_' . $_REQUEST[ 'pods_ajax_view_action' ] ) );
-			echo '-->';
-
 			if ( method_exists( 'Pods_AJAX_Views_Admin', 'admin_ajax_' . $_REQUEST[ 'pods_ajax_view_action' ] ) ) {
 				call_user_func( array( 'Pods_AJAX_Views_Admin', 'admin_ajax_' . $_REQUEST[ 'pods_ajax_view_action' ] ) );
 			}
@@ -497,20 +545,53 @@ class Pods_AJAX_Views_Frontend {
 				$ajax_view[ 'expires' ] = false;
 			}
 
+			// Check if it's cached
+			$cached = ( false !== self::get_cached_view( $cache_key, $cache_mode ) );
+
 			// Force regeneration
 			if ( $forced_generate ) {
 				// Delete cached view
 				self::delete_cached_view( $cache_key, $cache_mode );
+
+				$cached = false;
+
+				if ( self::$debug || ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ) {
+					echo '<!--PODS_AJAX_VIEWS_DEBUG: CACHE DELETED-->';
+				}
 			}
+			elseif ( self::$debug || ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ) {
+				if ( $cached ) {
+					echo '<!--PODS_AJAX_VIEWS_DEBUG: CACHED-->';
+				}
+				else {
+					echo '<!--PODS_AJAX_VIEWS_DEBUG: NOT CACHED-->';
+				}
+			}
+
+			self::$in_view = true;
 
 			// Use/generate cache and output view
 			pods_view( $ajax_view[ 'view' ], $ajax_view[ 'view_data' ], $ajax_view[ 'expires' ], $cache_mode );
 
+			// Did we cache it?
+			$view_cached = ( false !== self::get_cached_view( $cache_key, $cache_mode ) );
+
+			if ( self::$debug || ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ) {
+				if ( $view_cached ) {
+					echo '<!--PODS_AJAX_VIEWS_DEBUG: pods_view CACHED-->';
+				}
+				else {
+					echo '<!--PODS_AJAX_VIEWS_DEBUG: pods_view DID NOT CACHE-->';
+				}
+			}
+
+			self::$in_view = false;
+
 			// Track total time to run
 			$total = microtime( true ) - $start;
 
-			// Stats tracking of views
-			if ( defined( 'PODS_AJAX_VIEWS_STATS' ) && PODS_AJAX_VIEWS_STATS ) {
+			// Stats tracking of views (if not cached)
+			if ( ( false === $ajax_view[ 'expires' ] || ! $cached || ( $view_cached && ( $forced_generate || $cached !== $view_cached ) ) ) && defined( 'PODS_AJAX_VIEWS_STATS' ) && PODS_AJAX_VIEWS_STATS ) {
 				$data = array(
 					'avg_time' => $total,
 					'total_time' => $total,
@@ -567,6 +648,10 @@ class Pods_AJAX_Views_Frontend {
 
 				// Save AJAX View data
 				self::save_ajax_view( $cache_key, $cache_mode, $ajax_view[ 'uri' ], $data );
+
+				if ( self::$debug || ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ) {
+					echo '<!--PODS_AJAX_VIEWS_DEBUG: ' . $total . ' time to generate-->';
+				}
 			}
 		}
 
@@ -587,15 +672,170 @@ class Pods_AJAX_Views_Frontend {
 	 */
 	public static function pods_view_alt_view( $_null, $view, $data = null, $expires = false, $cache_mode = 'cache' ) {
 
-		if ( defined( 'PODS_AJAX_VIEWS_OVERRIDE' ) && PODS_AJAX_VIEWS_OVERRIDE ) {
-			// Check if realpath is false for $view, for theme-based calls
-			// Avoid plugins / mu-plugins overrides
-			if ( false === realpath( $view ) || ( 0 !== strpos( $view, realpath( WP_PLUGIN_DIR ) ) && 0 !== strpos( $view, realpath( WPMU_PLUGIN_DIR ) ) ) ) {
+		// Check if realpath is false for $view, for theme-based calls
+		// Avoid plugins / mu-plugins overrides
+		if ( false !== realpath( $view ) && ( 0 === strpos( $view, realpath( PODS_DIR ) ) || 0 === strpos( $view, realpath( WP_PLUGIN_DIR ) ) || 0 === strpos( $view, realpath( WPMU_PLUGIN_DIR ) ) ) ) {
+			return $_null;
+		}
+
+		if ( ! self::$in_view && ! is_admin() ) {
+			if ( defined( 'PODS_AJAX_VIEWS_OVERRIDE' ) && PODS_AJAX_VIEWS_OVERRIDE ) {
 				$_null = self::ajax_view( $view, $data, $expires, $cache_mode );
+			}
+			// If stats enabled, start tracking data now
+			elseif ( defined( 'PODS_AJAX_VIEWS_STATS' ) && PODS_AJAX_VIEWS_STATS ) {
+				// Get cache key for request
+				$cache_key = self::get_cache_key_from_view( $view, $data, $expires, $cache_mode );
+
+				// Setup URI
+				$uri = self::get_uri();
+
+				// Advanced $expires handling
+				$expires = self::handle_expires( $expires, $cache_mode );
+
+				// Translate explicit false to -1
+				if ( false === $expires ) {
+					$expires = '-1';
+				}
+
+				// Setup data to save to transient
+				$pods_ajax_view_data = array(
+					'cache_key' => $cache_key,
+					'cache_mode' => $cache_mode,
+					'uri' => $uri,
+					'view' => $view,
+					'view_data' => $data,
+					'expires' => $expires
+				);
+
+				// Save AJAX View data
+				self::save_ajax_view( $cache_key, $cache_mode, $uri, $pods_ajax_view_data );
+
+				// Did we cache it?
+				$cached = ( false !== self::get_cached_view( $cache_key, $cache_mode ) );
+
+				if ( self::$debug || ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ) {
+					if ( $cached ) {
+						echo '<!--PODS_VIEWS_DEBUG: CACHED-->';
+					}
+					else {
+						echo '<!--PODS_VIEWS_DEBUG: NOT CACHED-->';
+					}
+				}
+
+				if ( ! $cached ) {
+					$view_counters[ $view ] = time();
+				}
 			}
 		}
 
 		return $_null;
+
+	}
+
+	public static function pods_view_output_tracking( $output, $view, $data, $expires, $cache_mode ) {
+
+		// Check if realpath is false for $view, for theme-based calls
+		// Avoid plugins / mu-plugins overrides
+		if ( false !== realpath( $view ) && ( 0 === strpos( $view, realpath( PODS_DIR ) ) || 0 === strpos( $view, realpath( WP_PLUGIN_DIR ) ) || 0 === strpos( $view, realpath( WPMU_PLUGIN_DIR ) ) ) ) {
+			return $output;
+		}
+
+		if ( ! self::$in_view && ! is_admin() ) {
+			if ( defined( 'PODS_AJAX_VIEWS_OVERRIDE' ) && PODS_AJAX_VIEWS_OVERRIDE ) {
+				return $output;
+			}
+			// If stats enabled, start tracking data now
+			elseif ( defined( 'PODS_AJAX_VIEWS_STATS' ) && PODS_AJAX_VIEWS_STATS && isset( $view_counters[ $view ] ) ) {
+				// Get cache key for request
+				$cache_key = self::get_cache_key_from_view( $view, $data, $expires, $cache_mode );
+
+				// Setup URI
+				$uri = self::get_uri();
+
+				// Get AJAX View
+				$ajax_view = self::get_ajax_view( $cache_key, $cache_mode, $uri );
+
+				if ( ! empty( $ajax_view ) ) {
+					// Track total time to run
+					$total = microtime( true ) - $view_counters[ $view ];
+
+					// Did we cache it?
+					$view_cached = ( false !== self::get_cached_view( $cache_key, $cache_mode ) );
+
+					if ( self::$debug || ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ) {
+						if ( $view_cached ) {
+							echo '<!--PODS_VIEWS_DEBUG: pods_view CACHED-->';
+						}
+						else {
+							echo '<!--PODS_VIEWS_DEBUG: pods_view DID NOT CACHE-->';
+						}
+					}
+
+					// Stats tracking of views (if not cached)
+					if ( ( false === $expires || $view_cached ) && defined( 'PODS_AJAX_VIEWS_STATS' ) && PODS_AJAX_VIEWS_STATS ) {
+						$data = array(
+							'avg_time' => $total,
+							'total_time' => $total,
+							'total_calls' => 1,
+							'last_generated' => current_time( 'mysql' )
+						);
+
+						if ( ! empty( $ajax_view[ 'total_time' ] ) ) {
+							$data[ 'total_time' ] += (float) $ajax_view[ 'total_time' ];
+						}
+
+						if ( ! empty( $ajax_view[ 'total_calls' ] ) ) {
+							$data[ 'total_calls' ] += (int) $ajax_view[ 'total_calls' ];
+						}
+
+						$data[ 'avg_time' ] = $data[ 'total_time' ] / $data[ 'total_calls' ];
+
+						// Merge other main columns, except tracking_data and fields just set above
+						$data = array_merge( $ajax_view, $data );
+
+						// Remove extra data used by transient
+						if ( isset( $data[ '_data' ] ) ) {
+							unset( $data[ '_data' ] );
+						}
+
+						if ( ! empty( $ajax_view[ '_data' ] ) && ! empty( $ajax_view[ '_data' ][ 'path' ] ) ) {
+							// Default tracking data
+							$tracking_data = array(
+								'avg_time' => $total,
+								'total_time' => $total,
+								'total_calls' => 1,
+								'last_generated' => current_time( 'mysql' )
+							);
+
+							// Merge tracking data if path called from before
+							if ( ! empty( $ajax_view[ 'tracking_data' ] ) && ! empty( $ajax_view[ 'tracking_data' ][ $ajax_view[ '_data' ][ 'path' ] ] ) ) {
+								$tracking_data = $ajax_view[ 'tracking_data' ][ $ajax_view[ '_data' ][ 'path' ] ];
+
+								$data[ 'tracking_data' ] = $ajax_view[ 'tracking_data' ];
+
+								$tracking_data[ 'total_time' ]    += $total;
+								$tracking_data[ 'total_calls' ]   += 1;
+								$tracking_data[ 'avg_time' ]       = $tracking_data[ 'total_time' ] / $tracking_data[ 'total_calls' ];
+								$tracking_data[ 'last_generated' ] = current_time( 'mysql' );
+							}
+
+							// Set tracking data to be saved for path
+							$data[ 'tracking_data' ][ $ajax_view[ '_data' ][ 'path' ] ] = $tracking_data;
+						}
+
+						// Save AJAX View data
+						self::save_ajax_view( $cache_key, $cache_mode, $ajax_view[ 'uri' ], $data );
+
+						if ( self::$debug || ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ) {
+							echo '<!--PODS_VIEWS_DEBUG: ' . $total . ' time to generate-->';
+						}
+					}
+				}
+			}
+		}
+
+		return $output;
 
 	}
 
@@ -635,7 +875,11 @@ class Pods_AJAX_Views_Frontend {
 
 		// Check origins and avoid JS cross-domain issues with AJAX, do normal pods_view in that case
 		if ( '' !== get_http_origin() && !is_allowed_http_origin() ) {
+			self::$in_view = true;
+
 			$output = pods_view( $view, $data, $expires, $cache_mode, true );
+
+			self::$in_view = false;
 		}
 		// If not cached, add to the queue and include it via AJAX
 		elseif ( false === $output ) {

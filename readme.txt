@@ -53,6 +53,10 @@ For information about `pods_view`, see these resources:
 
 OR you can just install it with WordPress by going to Plugins >> Add New >> and type this plugin's name
 
+== Screenshots ==
+1. Manage page.
+2. Regnerating views from manage page.
+
 == Contributors ==
 
 Check out our GitHub for a list of contributors, or search our GitHub issues to see everyone involved in adding features, fixing bugs, or reporting issues/testing.

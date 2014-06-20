@@ -37,6 +37,13 @@ For information about `pods_view`, see these resources:
 * [Partial Page Caching and Smart Template Parts with Pods](http://pods.io/tutorials/partial-page-caching-smart-template-parts-pods/)
 * [Code Reference: pods_view](http://pods.io/docs/code/pods-view/)
 
+= Available Constants =
+
+* `define( 'PODS_AJAX_VIEWS_STATS', true )` - Creates a table for Stats tracking and regeneration ability; Must be enabled before activating, if you enable it, just deactivate / activate again
+* `define( 'PODS_AJAX_VIEWS_OVERRIDE', true )` - Overrides all pods_view() calls in the theme and turns them into AJAX views, even if they aren't set to cache (it'll load the non-cached version via AJAX)
+* `define( 'PODS_AJAX_VIEWS_API_KEY', 'abcdefghijk' )` - This should be highly randomized, it's the API key used to access the sitemap at yoursite.com/?pods_ajax_view_action=view_sitemap&pods_ajax_view_api_key=XXXX which must be accessed through the user (or anon) the regeneration will be run as because the URLs are specific to the user and have nonces on them; You can use this with a plugin like Warm Cache to keep your views fresh and always generated
+* `define( 'PODS_AJAX_VIEWS_SITEMAP_LIMIT', -1 )` - You can override how many sitemap items will show, default is 250
+
 == Installation ==
 
 1. Unpack the entire contents of this plugin zip file into your `wp-content/plugins/` folder locally

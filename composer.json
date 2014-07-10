@@ -1,5 +1,5 @@
 {
-    "name" : "podsframework/pods-ajax-views",
+    "name" : "pods-framework/pods-ajax-views",
     "description" : "An easy way to generate cached views from AJAX when they haven't been cached yet.",
     "type" : "wordpress-plugin",
     "keywords" : [ "pods", "wordpress", "fields", "AJAX" ],
@@ -15,7 +15,7 @@
     "require" : {
         "composer/installers" : "~1.0.0",
         "php" : ">=5.2.4",
-        "podsframework/pods" : ">=2.4.1"
+        "pods-framework/pods" : ">=2.4.1"
     },
     "extra" : {
         "installer-name" : "pods-ajax-views"

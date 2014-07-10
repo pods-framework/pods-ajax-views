@@ -12,7 +12,6 @@
             "role" : "Lead Developer"
         }
     ],
-    "type" : "wordpress-plugin",
     "require" : {
         "composer/installers" : "~1.0.0",
         "php" : ">=5.2.4",

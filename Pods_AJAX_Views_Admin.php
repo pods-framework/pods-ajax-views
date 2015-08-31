@@ -9,8 +9,10 @@ class Pods_AJAX_Views_Admin {
 	 */
 	public static function init() {
 
-		// Admin UI
-		add_filter( 'pods_admin_components_menu', array( __CLASS__, 'admin_menu' ) );
+		if ( defined( 'PODS_AJAX_VIEWS_STATS' ) && PODS_AJAX_VIEWS_STATS ) {
+			// Admin UI
+			add_filter( 'pods_admin_components_menu', array( __CLASS__, 'admin_menu' ) );
+		}
 
 		// Admin AJAX callbacks
 		add_action( 'wp_ajax_pods_ajax_view', array( __CLASS__, 'admin_ajax_view' ) );

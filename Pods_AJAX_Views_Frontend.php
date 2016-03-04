@@ -30,7 +30,7 @@ class Pods_AJAX_Views_Frontend {
 	public static function init() {
 
 		// Override default functionality of pods_view to use pods_ajax_view
-		add_action( 'pods_view_alt_view', array( 'Pods_AJAX_Views_Frontend', 'pods_view_alt_view' ) );
+		add_filter( 'pods_view_alt_view', array( 'Pods_AJAX_Views_Frontend', 'pods_view_alt_view' ), 10, 5 );
 
 		// Handle AJAX view requests to current page, let it go at top of hooks to avoid conflicts with other plugins
 		add_action( 'template_redirect', array( __CLASS__, 'frontend_ajax' ), 0 );

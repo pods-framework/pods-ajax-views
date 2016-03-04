@@ -141,7 +141,7 @@ class Pods_AJAX_Views {
 	/**
 	 * Register assets for Pods AJAX Views
 	 */
-	public function register_assets() {
+	public static function register_assets() {
 
 		// Register JS script for Pods AJAX View processing
 		wp_register_script( 'pods-ajax-views', plugins_url( 'js/pods-ajax-views.js', __FILE__ ), array( 'jquery' ), PODS_AJAX_VIEWS_VERSION, true );

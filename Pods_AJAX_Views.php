@@ -58,7 +58,7 @@ class Pods_AJAX_Views {
 			self::$compatible = false;
 
 			// Check if Pods is installed, that it's 2.4+, and that pods_view exists
-			if ( defined( 'PODS_VERSION' ) && version_compare( '2.4', PODS_VERSION, '<=' ) && function_exists( 'pods_view' ) ) {
+			if ( defined( 'PODS_VERSION' ) && version_compare( '2.4.1', PODS_VERSION, '<=' ) && function_exists( 'pods_view' ) ) {
 				// Set compatible to true for future reference
 				self::$compatible = true;
 

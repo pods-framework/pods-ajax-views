@@ -392,6 +392,10 @@ class Pods_AJAX_Views_Admin {
 
 				// View found, bail (needed here if using template_redirect request)
 				die();
+			} else {
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					echo '<!--PODS_AJAX_VIEWS_DEBUG: INVALID NONCE-->';
+				}
 			}
 		}
 

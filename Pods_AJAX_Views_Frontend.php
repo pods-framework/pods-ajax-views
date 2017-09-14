@@ -373,6 +373,10 @@ class Pods_AJAX_Views_Frontend {
 			$data[ 'cache_mode' ] = $cache_mode;
 			$data[ 'uri' ] = $uri;
 
+			if ( empty( $data['view_data'] ) ) {
+				$data['view_data'] = '';
+			}
+
 			if ( isset( $data[ 'expires' ] ) ) {
 				if ( false === $data[ 'expires' ] ) {
 					$data[ 'expires' ] = -1;
@@ -680,9 +684,10 @@ class Pods_AJAX_Views_Frontend {
 
 		if ( ! self::$in_view && ! is_admin() ) {
 			if ( defined( 'PODS_AJAX_VIEWS_OVERRIDE' ) && PODS_AJAX_VIEWS_OVERRIDE ) {
+				// ajax_view does it's own stats tracking
 				$_null = self::ajax_view( $view, $data, $expires, $cache_mode );
 			}
-			// If stats enabled, start tracking data now
+			// If stats enabled, start tracking data now (non-ajax stats tracking)
 			elseif ( defined( 'PODS_AJAX_VIEWS_STATS' ) && PODS_AJAX_VIEWS_STATS ) {
 				// Get cache key for request
 				$cache_key = self::get_cache_key_from_view( $view, $data, $expires, $cache_mode );
@@ -976,7 +981,7 @@ class Pods_AJAX_Views_Frontend {
 				. '</script>' . "\n";
 
 			// Allow for override of loading image
-			$spinner = apply_filters( 'pods_ajax_view_loader', includes_url( 'images/wpspin.gif' ), $view, $data, $expires, $cache_mode );
+			$spinner = apply_filters( 'pods_ajax_view_loader', includes_url( 'images/wpspin-2x.gif' ), $view, $data, $expires, $cache_mode );
 
 			// Output div with loading image
 			$output .= '<div class="pods-ajax-view-loader ' . sanitize_html_class( 'pods-ajax-view-loader-' . $nonce ) . '">'

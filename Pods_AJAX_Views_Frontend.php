@@ -600,7 +600,8 @@ class Pods_AJAX_Views_Frontend {
 					'avg_time' => $total,
 					'total_time' => $total,
 					'total_calls' => 1,
-					'last_generated' => current_time( 'mysql' )
+					'last_generated' => current_time( 'mysql' ),
+					'tracking_data' => array(),
 				);
 
 				if ( ! empty( $ajax_view[ 'total_time' ] ) ) {

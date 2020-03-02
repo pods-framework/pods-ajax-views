@@ -4,7 +4,7 @@ Donate link: http://podsfoundation.org/donate/
 Tags: pods, ajax
 Requires at least: 3.9
 Tested up to: 5.4
-Stable tag: 1.0
+Stable tag: 1.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -63,8 +63,13 @@ Check out our GitHub for a list of contributors, or search our GitHub issues to 
 
 [github.com/pods-framework/pods-ajax-views/graphs/contributors](https://github.com/pods-framework/pods-ajax-views/graphs/contributors)
 
-
 == Changelog ==
+
+= 1.1 - March 2nd, 2020 =
+* Fixed: Resolved potential SQL errors by not showing admin page if `PODS_AJAX_VIEWS_STATS` is not defined as true
+* Fixed: Fix `tracking_data` PHP notices
+* Added: When WP_DEBUG is on, we now output an HTML comment when nonce fails
+* Updated compatibility with WP 5.4
 
 = 1.0 - June 19th, 2014 =
 * First official release!

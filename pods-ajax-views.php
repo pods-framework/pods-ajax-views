@@ -1,11 +1,11 @@
 <?php
 /*
 Plugin Name: Pods AJAX Views
-Plugin URI: http://pods.io/2014/04/16/introducing-pods-alternative-cache/
+Plugin URI: https://pods.io/2014/04/16/introducing-pods-alternative-cache/
 Description: An easy way to generate cached views from AJAX when they haven't been cached yet
-Version: 1.1 Beta
+Version: 1.1
 Author: The Pods Framework Team
-Author URI: http://pods.io/
+Author URI: https://pods.io/
 */
 
 // Pods AJAX Views version

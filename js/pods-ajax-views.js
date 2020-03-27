@@ -19,40 +19,38 @@ var Pods_AJAX_View_Processor = {
 	 * Store progress indicator objects
 	 */
 	progress_indicator : {
-		status : null,
-		progress : null,
-		progress_label : null
+		status : null, progress : null, progress_label : null
 	},
 
 	/**
 	 * Process the next view from the queue
 	 */
-	process_next : function() {
+	process_next : function () {
 
 		if ( pods_ajax_views_config.is_admin && null === Pods_AJAX_View_Processor.progress_indicator.progress ) {
 			Pods_AJAX_View_Processor.progress_indicator.status = jQuery( '#pods-ajax-views-progress-status' );
 			Pods_AJAX_View_Processor.progress_indicator.progress = jQuery( '#pods-ajax-views-progress-indicator' );
-			Pods_AJAX_View_Processor.progress_indicator.progress_label = jQuery( '#pods-ajax-views-progress-label'  );
+			Pods_AJAX_View_Processor.progress_indicator.progress_label = jQuery( '#pods-ajax-views-progress-label' );
 
 			Pods_AJAX_View_Processor.progress_indicator.progress.show();
 
 			Pods_AJAX_View_Processor.progress_indicator.progress.progressbar( {
-				value : 0,
-				max : 200,
-				change : function() {
+																				  value    : 0,
+																				  max      : 200,
+																				  change   : function () {
 
-					var value = Pods_AJAX_View_Processor.progress_indicator.progress.progressbar( 'value' );
+																					  var value = Pods_AJAX_View_Processor.progress_indicator.progress.progressbar( 'value' );
 
-					// Value / 2 because max is 200 and we want 0-100% format
-					Pods_AJAX_View_Processor.progress_indicator.progress_label.text( ( value / 2 ) + '%' );
+																					  // Value / 2 because max is 200 and we want 0-100% format
+																					  Pods_AJAX_View_Processor.progress_indicator.progress_label.text( (value / 2) + '%' );
 
-				},
-				complete : function() {
+																				  },
+																				  complete : function () {
 
-					Pods_AJAX_View_Processor.progress_indicator.progress_label.text( '100%' );
+																					  Pods_AJAX_View_Processor.progress_indicator.progress_label.text( '100%' );
 
-				}
-			} );
+																				  }
+																			  } );
 		}
 
 		// Check if there are views in the queue
@@ -69,42 +67,44 @@ var Pods_AJAX_View_Processor = {
 				Pods_AJAX_View_Processor.process_next();
 			}
 		}
-		else if ( pods_ajax_views_config.is_admin ) {
-			Pods_AJAX_View_Processor.progress_indicator.progress.progressbar( { value : 200 } );
+		else {
+			if ( pods_ajax_views_config.is_admin ) {
+				Pods_AJAX_View_Processor.progress_indicator.progress.progressbar( {value : 200} );
 
-			var status_text = pods_ajax_views_config.status_complete;
+				var status_text = pods_ajax_views_config.status_complete;
 
-			if ( 1 < Pods_AJAX_View_Processor.total ) {
-				status_text = pods_ajax_views_config.status_complete_plural;
+				if ( 1 < Pods_AJAX_View_Processor.total ) {
+					status_text = pods_ajax_views_config.status_complete_plural;
+				}
+
+				Pods_AJAX_View_Processor.progress_indicator.status.text( status_text );
 			}
+			else {
+				if ( 0 < Pods_AJAX_View_Processor.total && pods_ajax_views_config.additional_urls.length ) {
+					var additional_url, k;
 
-			Pods_AJAX_View_Processor.progress_indicator.status.text( status_text );
-		}
-		else if ( 0 < Pods_AJAX_View_Processor.total && pods_ajax_views_config.additional_urls.length ) {
-			var additional_url, k;
+					for ( k in pods_ajax_views_config.additional_urls ) {
+						additional_url = pods_ajax_views_config.additional_urls[k];
 
-			for ( k in pods_ajax_views_config.additional_urls ) {
-				additional_url = pods_ajax_views_config.additional_urls[ k ];
+						jQuery.ajax( {
+										 type     : 'POST',
+										 dataType : 'html',
+										 url      : additional_url,
+										 cache    : false,
+										 success  : function ( content ) {
 
-				jQuery.ajax( {
-					type : 'POST',
-					dataType : 'html',
-					url : additional_url,
-					cache : false,
-					success : function ( content ) {
+										 },
+										 error    : function ( jqXHR, textStatus, errorThrown ) {
 
+											 // Log error if console is available
+											 if ( window.console ) {
+												 console.log( 'Pods AJAX View Error: ' + errorThrown + ' (' + additional_url + ')' );
+											 }
 
-
-					},
-					error : function ( jqXHR, textStatus, errorThrown ) {
-
-						// Log error if console is available
-						if ( window.console ) {
-							console.log( 'Pods AJAX View Error: ' + errorThrown + ' (' + additional_url + ')' );
-						}
-
+										 }
+									 } );
 					}
-				} );
+				}
 			}
 		}
 
@@ -118,7 +118,7 @@ var Pods_AJAX_View_Processor = {
 	 * @param nonce Nonce
 	 * @param uri Current URI
 	 */
-	load_view : function( cache_key, cache_mode, nonce, uri ) {
+	load_view : function ( cache_key, cache_mode, nonce, uri ) {
 
 		// Get view container(s)
 		var $view_container = jQuery( 'div.pods-ajax-view-loader-' + nonce );
@@ -128,7 +128,7 @@ var Pods_AJAX_View_Processor = {
 			var pods_ajax_view_action = 'view';
 
 			// Get current progress based on 0-100%
-			var progress_value = ( ( Pods_AJAX_View_Processor.total - Pods_AJAX_View_Processor.queue.length ) * 100 ) / Pods_AJAX_View_Processor.total;
+			var progress_value = ((Pods_AJAX_View_Processor.total - Pods_AJAX_View_Processor.queue.length) * 100) / Pods_AJAX_View_Processor.total;
 
 			if ( pods_ajax_views_config.is_admin ) {
 				pods_ajax_view_action = 'view_regenerate';
@@ -137,30 +137,25 @@ var Pods_AJAX_View_Processor = {
 				if ( 0 === Pods_AJAX_View_Processor.progress_indicator.progress.progressbar( 'value' ) ) {
 					// Set value to x*2 because progress is 0-100% format, but progressbar is tracking 0-200 for pre/loaded indication
 					// We use (x*2)-1 because we want to show the indication of it getting ready to load
-					Pods_AJAX_View_Processor.progress_indicator.progress.progressbar( { value : ( Math.round( progress_value * 2 ) - 1 ) } );
+					Pods_AJAX_View_Processor.progress_indicator.progress.progressbar( {value : (Math.round( progress_value * 2 ) - 1)} );
 				}
 			}
 
 			if ( '' === uri ) {
-				uri = pods_ajax_views_config.ajax_url + '?action=pods_ajax_' . pods_ajax_view_action;
+				uri = pods_ajax_views_config.ajax_url + '?action=pods_ajax_'.pods_ajax_view_action;
 			}
 
 			jQuery.ajax( {
-				type : 'POST',
-				dataType : 'html',
-				url : uri,
-				cache : false,
-				data : {
+							 type : 'POST', dataType : 'html', url : uri, cache : false, data : {
 					pods_ajax_view_action : pods_ajax_view_action,
-					pods_ajax_view_key : cache_key,
-					pods_ajax_view_mode : cache_mode,
-					pods_ajax_view_nonce : nonce
-				},
-				success : function ( content ) {
+					pods_ajax_view_key    : cache_key,
+					pods_ajax_view_mode   : cache_mode,
+					pods_ajax_view_nonce  : nonce
+				}, success        : function ( content ) {
 
 					// Update progress indicator
 					if ( pods_ajax_views_config.is_admin ) {
-						Pods_AJAX_View_Processor.progress_indicator.progress.progressbar( { value : Math.round( progress_value * 2 ) } );
+						Pods_AJAX_View_Processor.progress_indicator.progress.progressbar( {value : Math.round( progress_value * 2 )} );
 					}
 					// Replace temporary container with the real content
 					else {
@@ -168,14 +163,21 @@ var Pods_AJAX_View_Processor = {
 					}
 
 					// Trigger events for advanced functionality
-					jQuery( document ).trigger( 'pods-ajax-view-loaded', [ cache_key, cache_mode, content ] );
-					jQuery( document ).trigger( 'pods-ajax-view-loaded-' + cache_key + '-' + cache_mode, [ cache_key, cache_mode, content ] );
+					jQuery( document ).trigger( 'pods-ajax-view-loaded', [
+						cache_key,
+						cache_mode,
+						content
+					] );
+					jQuery( document ).trigger( 'pods-ajax-view-loaded-' + cache_key + '-' + cache_mode, [
+						cache_key,
+						cache_mode,
+						content
+					] );
 
 					// Process next view from the queue
 					Pods_AJAX_View_Processor.process_next();
 
-				},
-				error : function ( jqXHR, textStatus, errorThrown ) {
+				}, error          : function ( jqXHR, textStatus, errorThrown ) {
 
 					// Log error if console is available
 					if ( window.console ) {
@@ -189,14 +191,14 @@ var Pods_AJAX_View_Processor = {
 					Pods_AJAX_View_Processor.process_next();
 
 				}
-			} );
+						 } );
 		}
 
 	}
 
 };
 
-jQuery( function() {
+jQuery( function () {
 
 	// Check if defined and has values
 	if ( 'undefined' != typeof pods_ajax_views && {} != pods_ajax_views ) {

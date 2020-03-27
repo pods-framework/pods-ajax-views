@@ -14,7 +14,6 @@ class Pods_AJAX_Views {
 	 * Setup default constants, add hooks
 	 */
 	public static function init() {
-
 		// Default stats tracking and advanced functionality is off
 		if ( ! defined( 'PODS_AJAX_VIEWS_STATS' ) ) {
 			define( 'PODS_AJAX_VIEWS_STATS', false );
@@ -28,21 +27,19 @@ class Pods_AJAX_Views {
 			include_once 'Pods_AJAX_Views_Admin.php';
 
 			// Init admin
-			add_action( 'init', array( 'Pods_AJAX_Views_Admin', 'init' ) );
+			add_action( 'init', [ 'Pods_AJAX_Views_Admin', 'init' ] );
 
 			// Register assets
-			add_action( 'admin_enqueue_scripts', array( __CLASS__, 'register_assets' ) );
-		}
-		else {
+			add_action( 'admin_enqueue_scripts', [ __CLASS__, 'register_assets' ] );
+		} else {
 			include_once 'Pods_AJAX_Views_Frontend.php';
 
 			// Init frontend
-			add_action( 'init', array( 'Pods_AJAX_Views_Frontend', 'init' ) );
+			add_action( 'init', [ 'Pods_AJAX_Views_Frontend', 'init' ] );
 
 			// Register assets
-			add_action( 'wp_enqueue_scripts', array( __CLASS__, 'register_assets' ) );
+			add_action( 'wp_enqueue_scripts', [ __CLASS__, 'register_assets' ] );
 		}
-
 	}
 
 	/**
@@ -51,7 +48,6 @@ class Pods_AJAX_Views {
 	 * @return bool
 	 */
 	public static function is_compatible() {
-
 		// See if compatible has been checked yet, if not, check it and set it
 		if ( null === self::$compatible ) {
 			// Default compatible is false
@@ -70,23 +66,20 @@ class Pods_AJAX_Views {
 		}
 
 		return self::$compatible;
-
 	}
 
 	/**
 	 * Activate plugin routine
 	 */
 	public static function activate() {
-
 		// Create table for stats tracking and other advanced features
 		if ( defined( 'PODS_AJAX_VIEWS_STATS' ) && PODS_AJAX_VIEWS_STATS ) {
 			/**
 			 * @var $wpdb wpdb
-			 */
-			global $wpdb;
+			 */ global $wpdb;
 
 			// Table definitions
-			$tables = array();
+			$tables = [];
 
 			$tables[] = "
 				CREATE TABLE `{$wpdb->prefix}podsviews` (
@@ -115,18 +108,15 @@ class Pods_AJAX_Views {
 
 		// Update version in DB
 		update_option( 'pods_ajax_views_version', PODS_AJAX_VIEWS_VERSION );
-
 	}
 
 	/**
 	 * Deactivate plugin routine
 	 */
 	public static function deactivate() {
-
 		/**
 		 * @var $wpdb wpdb
-		 */
-		global $wpdb;
+		 */ global $wpdb;
 
 		include_once 'Pods_AJAX_Views_Frontend.php';
 
@@ -135,20 +125,18 @@ class Pods_AJAX_Views {
 
 		// Delete table if it exists
 		$wpdb->query( "DROP TABLE IF EXISTS `{$wpdb->prefix}podsviews`" );
-
 	}
 
 	/**
 	 * Register assets for Pods AJAX Views
 	 */
 	public static function register_assets() {
-
 		// Register JS script for Pods AJAX View processing
-		wp_register_script( 'pods-ajax-views', plugins_url( 'js/pods-ajax-views.js', __FILE__ ), array( 'jquery' ), PODS_AJAX_VIEWS_VERSION, true );
+		wp_register_script( 'pods-ajax-views', plugins_url( 'js/pods-ajax-views.js', __FILE__ ), [ 'jquery' ], PODS_AJAX_VIEWS_VERSION, true );
 
 		$is_admin = is_admin();
 
-		$additional_urls = array();
+		$additional_urls = [];
 
 		// Clear page cache for URL when finished loading all AJAX Views for a page
 		// so that the next time the page is loaded, no AJAX is used
@@ -158,12 +146,10 @@ class Pods_AJAX_Views {
 			// WPEngine
 			if ( defined( 'WPE_PLUGIN_VERSION' ) ) {
 				$clean_anon_cache = true;
-			}
-			// W3 Total Cache
+			} // W3 Total Cache
 			elseif ( 1 == 0 ) {
 				$clean_anon_cache = true;
-			}
-			// Others?
+			} // Others?
 			elseif ( 1 == 0 ) {
 				$clean_anon_cache = true;
 			}
@@ -180,11 +166,11 @@ class Pods_AJAX_Views {
 				// Build nonce from action
 				$nonce = wp_create_nonce( $nonce_action );
 
-				$ajax_args = array(
+				$ajax_args = [
 					'pods_ajax_view_action' => 'clean_anon_cache',
-					'pods_ajax_view_url' => $uri,
-					'pods_ajax_view_nonce' => $nonce
-				);
+					'pods_ajax_view_url'    => $uri,
+					'pods_ajax_view_nonce'  => $nonce,
+				];
 
 				$ajax_uri = add_query_arg( $ajax_args, $uri );
 
@@ -193,14 +179,14 @@ class Pods_AJAX_Views {
 		}
 
 		// Setup config values for reference
-		$config = array(
-			'ajax_url' => admin_url( 'admin-ajax.php' ),
-			'version' => PODS_AJAX_VIEWS_VERSION,
-			'is_admin' => $is_admin,
-			'status_complete' => __( 'Pods AJAX View generated successfully', 'pods-ajax-views' ),
+		$config = [
+			'ajax_url'               => admin_url( 'admin-ajax.php' ),
+			'version'                => PODS_AJAX_VIEWS_VERSION,
+			'is_admin'               => $is_admin,
+			'status_complete'        => __( 'Pods AJAX View generated successfully', 'pods-ajax-views' ),
 			'status_complete_plural' => __( 'Pods AJAX Views generated successfully', 'pods-ajax-views' ),
-			'additional_urls' => $additional_urls
-		);
+			'additional_urls'        => $additional_urls,
+		];
 
 		// Setup variable for output when JS enqueued
 		wp_localize_script( 'pods-ajax-views', 'pods_ajax_views_config', $config );

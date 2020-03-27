@@ -1,24 +1,29 @@
 {
-    "name" : "pods-framework/pods-ajax-views",
-    "description" : "An easy way to generate cached views from AJAX when they haven't been cached yet.",
-    "type" : "wordpress-plugin",
-    "keywords" : [ "pods", "wordpress", "fields", "AJAX" ],
-    "license" : "GPL-2.0+",
-    "authors" : [
-        {
-            "name" : "Scott Kingsley Clark",
-            "email" : "scott@pods.io",
-            "homepage" : "http://scottkclark.com/",
-            "role" : "Lead Developer"
-        }
-    ],
-    "require" : {
-        "composer/installers" : "~1.0.0",
-        "php" : ">=5.2.4",
-        "wpackagist-plugin/pods" : ">=2.4.1"
-    },
-    "extra" : {
-        "installer-name" : "pods-ajax-views"
-    },
-    "homepage" : "http://pods.io/"
+  "name": "pods-framework/pods-ajax-views",
+  "description": "An easy way to generate cached views from AJAX when they haven't been cached yet.",
+  "type": "wordpress-plugin",
+  "keywords": [
+    "pods",
+    "wordpress",
+    "fields",
+    "AJAX"
+  ],
+  "license": "GPL-2.0+",
+  "authors": [
+    {
+      "name": "Scott Kingsley Clark",
+      "email": "scott@pods.io",
+      "homepage": "http://scottkclark.com/",
+      "role": "Lead Developer"
+    }
+  ],
+  "require": {
+    "composer/installers": "~1.0.0",
+    "php": ">=5.4",
+    "wpackagist-plugin/pods": ">=2.4.1"
+  },
+  "extra": {
+    "installer-name": "pods-ajax-views"
+  },
+  "homepage": "http://pods.io/"
 }
